@@ -6,6 +6,7 @@ FriendMaking::FriendMaking(QString UserId,TcpSocketClient*s,QWidget *parent) :
     ui(new Ui::FriendMaking)
 {
     ui->setupUi(this);
+    setAttribute(Qt::WA_DeleteOnClose);
     socket = s;
     this->UserId = UserId;
     //接收到消息时

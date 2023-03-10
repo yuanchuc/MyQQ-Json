@@ -18,8 +18,8 @@ LoginView::LoginView(QWidget *parent) :
     readComBoxItem();
 
     //获取ip地址和端口号
-    //IP = "8.130.74.114";
-    IP = "192.168.56.1";
+    IP = "8.130.74.114";
+    //IP = "192.168.56.1";
     port = "4567";
     //socket启动
     socket = new TcpSocketClient;
