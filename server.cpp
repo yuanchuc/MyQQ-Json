@@ -85,7 +85,7 @@ private:
     //用户登入时进行处理
     void LoginFun(ClientSocket* pClient, MyProtoMsg* header) {
 
-        printf("recvClient<Socket=%d>requset:CMD_LOGIN,dataLength:%d,userName = %s  PassaWord=%s\n", (int)pClient->sockfd(), header->head.len, header->body["userId"].asCString(), header->body["pwd"].asCString());
+        printf("recvClient<Socket=%d>requset:CMD_LOGIN,dataLength:%d\n", (int)pClient->sockfd(), header->head.len);
         //忽略判断用户密码是否正确的过程
         string sql_1 = "select * from logininfo where id = '%s';";
         char targetString1[1024];
@@ -115,11 +115,11 @@ private:
             //账号已经登入
             if (isLogin) {
                 msg1.body["result"] = Json::Value(0);
-                msg1.body["data"] = Json::Value("账号已经登入");
+                msg1.body["data"] = Json::Value("Account has been logged in");
             }
             else {
                 msg1.body["result"] = Json::Value(1);
-                msg1.body["data"] = Json::Value("账号登入成功");
+                msg1.body["data"] = Json::Value("Login success");
                 //数据库数据更新
                 string sql_2 = "update logininfo set cur_socket = %d ,status = 1 where id = '%s'";
                 char targetString2[1024];
@@ -130,14 +130,14 @@ private:
         }
         else {
             msg1.body["result"] = Json::Value(-1);
-            msg1.body["data"] = Json::Value("密码错误");
+            msg1.body["data"] = Json::Value("Password error");
         }
         pClient->SendData(&msg1);
     }
     void LogonFun(ClientSocket* pClient, MyProtoMsg* header) {
 
         //忽略判断用户密码是否正确的过程
-        
+        printf("recvClient<Socket=%d>requset:CMD_LOGON,dataLength:%d\n", (int)pClient->sockfd(), header->head.len);
         string sql_1 = "select * from logininfo where id = '%d'";
 
         char targetString1[1024];
@@ -156,7 +156,7 @@ private:
         if (isLogon == true) {
             //账号已经被注册
             msg.body["result"] = Json::Value(0);
-            msg.body["data"] = Json::Value("账号已经被注册");
+            msg.body["data"] = Json::Value("The account has been registered");
             printf("ERROR:UserName is logoned\n");
         }
         else {
@@ -167,13 +167,13 @@ private:
             //ret.result = 1;
             printf("SUCCESS:UserName is logoning\n");
             msg.body["result"] = Json::Value(1);
-            msg.body["data"] = Json::Value("账号注册成功");
+            msg.body["data"] = Json::Value("Account registration succeeded");
         }
         pClient->SendData(&msg);
     }
     void FriendMaking(ClientSocket* pClient, MyProtoMsg* header) {
         
-        //printf("recvClient<Socket=%d>requset:CMD_FRIEND_MAKE,dataLength:%d,userName = %s  friendName=%s\n", (int)pClient->sockfd(), FM->dataLength, FM->userId, FM->friendId);
+        printf("recvClient<Socket=%d>requset:CMD_FRIEND_MAKE,dataLength:%d\n", (int)pClient->sockfd(), header->head.len);
 
         MyProtoMsg msg;
         msg.head.server = CMD_FRIEND_MAKE_RESULT;
@@ -213,7 +213,7 @@ private:
             if (!isMakeFriend) {
                 //如果不是好友
                 msg.body["result"] = 1;
-                msg.body["data"] = Json::Value("添加好友成功");
+                msg.body["data"] = Json::Value("Succeeded in adding a friend");
 
                 string sql_4 = "insert into friendmaking values ('%s','%s',CURRENT_TIMESTAMP,UUID_SHORT());";
                 char targetString4[1024];
@@ -223,24 +223,21 @@ private:
                 printf("insert successful");
             }
             else {
-                //如果是好友
+                //如果是好友 
                 msg.body["result"] = 0;
-                msg.body["data"] = Json::Value("你们已经是好友");
+                msg.body["data"] = Json::Value("You're already friends");
             }
         }
         else {
             //如果该用户不存在
             msg.body["result"] = 0;
-            msg.body["data"] = Json::Value("该用户不存在");
-            printf("ERROR,no exists");
+            msg.body["data"] = Json::Value("The user does not exist");
+            printf("ERROR,no exists\n");
         }
-        printf("body.data = %s\n", msg.body["data"].asCString());
-        //printf("ret.friendId = %s", ret.friendId);
-        
         pClient->SendData(&msg);
     }
     void GetFriends(ClientSocket* pClient, MyProtoMsg* header) {
-
+        printf("recvClient<Socket=%d>requset:CMD_GET_FRIEND,dataLength:%d\n", (int)pClient->sockfd(), header->head.len);
         string sql_1 = "select * from friendmaking where selfUserId = '%s' or friendUserId = '%s';";
         char targetString1[1024];
         snprintf(targetString1, sizeof(targetString1), sql_1.c_str(), header->body["selfUserId"].asCString(), header->body["selfUserId"].asCString());
@@ -271,8 +268,8 @@ int main() {
     server.Bind(nullptr, 4567);
     server.Listen(15);
     server.Start(4);
-    std::thread t1(cmdThread);
-    t1.detach();    //分离主线程，防止主线程退出后，子线程仍未退出导致问题
+    //std::thread t1(cmdThread);
+    //t1.detach();    //分离主线程，防止主线程退出后，子线程仍未退出导致问题
     
     while (g_bRun) {
         server.OnRun(); 

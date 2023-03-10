@@ -139,9 +139,8 @@ bool MyProtoDecode::parser(void* data, size_t len)
             //删除已经被解析的网络字节流
             mCurReserved.erase(mCurReserved.begin(), mCurReserved.begin() + parserLen);
         }
-
-        return true;
     }
+    return true;
 }
 
 //用于解析消息头

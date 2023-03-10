@@ -62,7 +62,7 @@ public:
 	int SendData(MyProtoMsg* header) {
 		
 		if (header) {
-			cout << "发送数据" << endl << header->body << endl;
+			cout << "Send Data" << endl << header->body << endl;
 			uint32_t len = 0;
 			uint8_t* pData = nullptr;
 			MyProtoEncode myEncode;
@@ -173,7 +173,7 @@ public:
 			//timeval t = { 1,0 };//非阻塞
 			int ret = (int)select(maxSock + 1, &fdRead, nullptr, nullptr, nullptr);//if(timeout==NULL) 没有数据时则会造成阻塞
 			if (ret < 0) {
-				printf("select任务结束.\n");
+				printf("select task over.\n");
 				Close();
 				return ;
 			}
@@ -220,7 +220,7 @@ public:
 		while (!myDecode.empty())
 		{
 			pMsg = myDecode.front();
-			cout<<"接收数据" <<endl<< pMsg->body << endl;
+			cout<<"Recv Data:" <<endl<< pMsg->body << endl;
 			OnNetMsg(pClient, pMsg);
 			
 			myDecode.pop();
