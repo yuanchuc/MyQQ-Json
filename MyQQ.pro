@@ -32,7 +32,8 @@ SOURCES +=\
     tcpsocketclient.cpp \
     friendmaking.cpp \
     myproto.cpp \
-    jsoncpp.cpp
+    jsoncpp.cpp \
+    frienditem.cpp
 
 HEADERS += loginview.h \
     mainchat.h \
@@ -40,12 +41,14 @@ HEADERS += loginview.h \
     tcpsocketclient.h \
     friendmaking.h \
     myproto.h \
-    json/json.h
+    json/json.h \
+    frienditem.h
 
 FORMS += loginview.ui \
     mainchat.ui \
     logonview.ui \
-    friendmaking.ui
+    friendmaking.ui \
+    frienditem.ui
 
 # Default rules for deployment.
 qnx: target.path = /tmp/$${TARGET}/bin

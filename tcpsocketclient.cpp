@@ -92,6 +92,7 @@ void TcpSocketClient::onRecvData()
         while (!myDecode.empty())
         {
             pMsg = myDecode.front();
+            cout<<"server = "<<pMsg->head.server<<endl;
             cout<<"body = "<<pMsg->body<<endl;
             emit hasMsg(pMsg);
             myDecode.pop();

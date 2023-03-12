@@ -18,8 +18,8 @@ LoginView::LoginView(QWidget *parent) :
     readComBoxItem();
 
     //获取ip地址和端口号
-    IP = "8.130.74.114";
-    //IP = "192.168.56.1";
+    //IP = "8.130.74.114";
+    IP = "192.168.56.1";
     port = "4567";
     //socket启动
     socket = new TcpSocketClient;
@@ -46,9 +46,13 @@ void LoginView::on_loginButton_clicked()
     loginStatus = true;
 
     QTimer::singleShot(2000,this,[&](){
-        if(!loginStatus) return;
+        if(!loginStatus){
+            ui->cancelLoginButton->hide();
+            return;
+        }
         if(!socket->b_isConnectState) {
             loginViewReduce();
+            ui->cancelLoginButton->hide();
             QMessageBox::warning(this,"登入提示","当前网络未连接");
             return;
         }
@@ -58,8 +62,8 @@ void LoginView::on_loginButton_clicked()
         //------放入消息
         msg1.head.server = CMD_LOGIN;
         qDebug()<<userId;
-        msg1.body["userId"] = Json::Value(userId.toStdString()) ;
-        msg1.body["pwd"] = pwd.toStdString().c_str();
+        msg1.body["userId"] = Json::Value(userId.toStdString().c_str()) ;
+        msg1.body["pwd"] = Json::Value(pwd.toStdString().c_str());
         socket->onSendData(msg1);
     });
 }

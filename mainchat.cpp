@@ -34,14 +34,38 @@ void MainChat::Connected()
 
 void MainChat::hasMsgDeal(MyProtoMsg* header)
 {
-    qDebug()<<"header->server = "<<header->head.server;
+    qDebug()<<"MainChat:header->server = "<<header->head.server;
     switch (header->head.server) {
         case CMD_GET_FRIEND_RESULT:{
+            qDebug()<<"clear"<<endl;
             ui->listWidget1->clear();
+            qDebug()<<"clear"<<endl;
             for(auto info : header->body["friendInfo"]){
-                ui->listWidget1->addItem(QString(info["friendUserId"].asCString()));
+                addNewItem(QString(info["friendUserId"].asCString()),QString(info["status"].asCString()));
             }
-        }
+        }break;
+        case CMD_FRIEND_LOGIN:{
+            for(auto item:friendItems){
+                if(header->body["friendId"].asString()==item->getFriendId().toStdString()){
+                    item->setStatus("1");
+                    break;
+                }
+            }
+        }break;
+
+        case CMD_FRIEND_LOGOUT:{
+            for(auto item:friendItems){
+                if(header->body["friendId"].asString()==item->getFriendId().toStdString()){
+                    item->setStatus("0");
+                    break;
+                }
+            }
+        }break;
+
+        case CMD_FRIEND_ADD:{
+            addNewItem(QString(header->body["friendUserId"].asCString()),"1");
+        }break;
+
     }
 }
 
@@ -61,16 +85,27 @@ void MainChat::setTabWidget()
 
 void MainChat::initFriend()
 {
+    cout<<"initFriend"<<endl;
      MyProtoMsg msg;
      msg.head.server = CMD_GET_FRIEND;
      msg.body["selfUserId"] = this->UserId.toStdString().c_str();
-
     if(socket->b_isConnectState){
         socket->onSendData(msg);
-    }
+    }  
 }
 
-void MainChat::on_pushButton_clicked()
+void MainChat::addNewItem(QString friendId, QString result)
+{
+    friendItem* widget = new friendItem(socket,this->UserId,friendId,result,this);
+    QListWidgetItem* item = new QListWidgetItem;
+    item->setSizeHint(QSize(24, 36));
+    ui->listWidget1->addItem(item);
+    ui->listWidget1->setItemWidget(item, widget);
+    widget->show();
+    friendItems.push_back(widget);
+}
+
+void MainChat::on_insertFriendButton_clicked()
 {
     FriendMaking * FM = new FriendMaking(UserId,socket);
     connect(FM,&FriendMaking::addNewFriend,this,&MainChat::initFriend);
