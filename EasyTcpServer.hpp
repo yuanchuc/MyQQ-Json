@@ -71,6 +71,18 @@ public:
 		}
 		return SOCKET_ERROR;
 	}
+	int SendData(MyProtoMsg* header,SOCKET cSock) {
+
+		if (header) {
+			cout << "Send Data" << endl << header->body << endl;
+			uint32_t len = 0;
+			uint8_t* pData = nullptr;
+			MyProtoEncode myEncode;
+			pData = myEncode.encode(header, len);
+			return send(cSock, (const char*)pData, header->head.len, 0);
+		}
+		return SOCKET_ERROR;
+	}
 private:
 	string UserId;
 	SOCKET _sockfd;//socket fd_set   file desc set
@@ -195,7 +207,7 @@ public:
 	//»º³åÇø
 	char* _szRecv = new char[RECV_BUFF_SIZE];
 	int RecvData(ClientSocket* pClient) {
-		unsigned int len;
+		int len;
 
 		len = recv(pClient->sockfd(), _szRecv, RECV_BUFF_SIZE, 0);
 		if (len <= 0) {

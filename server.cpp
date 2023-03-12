@@ -40,18 +40,22 @@ public:
 public:
     virtual void OnNetJoin(ClientSocket* pClient) {
         _clientCount++;
-        printf("client<%d> join\n", pClient->sockfd());
+        printf("client<%d> join\n", (int)pClient->sockfd());
     }
     //用户退出时初始化数据
     virtual void OnNetLeave(ClientSocket* pClient) {
         _clientCount--;
-        
-        string updt;
-        updt.append("update logininfo set cur_socket = null,status = 0 where id = '");
-        updt.append(pClient->getUserID());
-        updt.append("'");  
-        MySQL.mysql_DML(updt.c_str());
-        printf("client<%d> leave\n", pClient->sockfd());
+        //通知好友已下线
+        MyProtoMsg msgToFriend;
+        msgToFriend.head.server = CMD_FRIEND_LOGOUT;
+        msgToFriend.body["friendId"] = Json::Value(pClient->getUserID().c_str());
+        SendToFriendForLogin(pClient, msgToFriend);
+        //初始化数据
+        string updt = "update logininfo set cur_socket = null,status = 0 where id = '%s';";
+        char targetString[1024];
+        snprintf(targetString, sizeof(targetString), updt.c_str(), pClient->getUserID()); 
+        MySQL.mysql_DML(targetString);
+        printf("client<%d> leave\n", (int)pClient->sockfd());
     }
     //处理信息
     virtual void OnNetMsg(ClientSocket* pClient, MyProtoMsg* header) {
@@ -68,12 +72,7 @@ public:
             break;
         case CMD_GET_FRIEND: GetFriends(pClient, header);
             break;
-        //default: {
-        //    //printf("Socket=<%d>收到未定义消息,数据长度：%d\n", (int)pClient->sockfd(), header->dataLength);
-        //    /*DataHeader ret;
-        //    SendData(cSock, &ret); */
-        //}
-        //       break;
+        case CMD_DEL_FRIEND: DelFriend(pClient, header);
         }
     }
 private:
@@ -121,11 +120,16 @@ private:
                 msg1.body["result"] = Json::Value(1);
                 msg1.body["data"] = Json::Value("Login success");
                 //数据库数据更新
-                string sql_2 = "update logininfo set cur_socket = %d ,status = 1 where id = '%s'";
+                string sql_2 = "update logininfo set cur_socket = %s ,status = 1 where id = '%s'";
                 char targetString2[1024];
-                snprintf(targetString2, sizeof(targetString2), sql_2.c_str(), std::to_string(pClient->sockfd()).c_str(),header->body["userId"].asCString());
+                snprintf(targetString2, sizeof(targetString2), sql_2.c_str(), std::to_string((int)pClient->sockfd()).c_str(),header->body["userId"].asCString());
                 MySQL.mysql_DML(targetString2);
                 pClient->setUserId(header->body["userId"].asCString());
+                //通知好友上线
+                MyProtoMsg msgToFriend;
+                msgToFriend.head.server = CMD_FRIEND_LOGIN;
+                msgToFriend.body["friendId"] = Json::Value(header->body["userId"].asCString());
+                SendToFriendForLogin(pClient,msgToFriend);
             }
         }
         else {
@@ -192,21 +196,14 @@ private:
         if (isExist) {
             //双向验证好友信息
             bool isMakeFriend = false;
-            string sql_2 = "select * from friendmaking where selfUserId = '%s' and friendUserId = '%s';";
+            string sql_2 = "select * from friendmaking where (selfUserId = '%s' and friendUserId = '%s') or (friendUserId = '%s' and selfUserId = '%s');";
             char targetString2[1024];
-            snprintf(targetString2,sizeof(targetString2),sql_2.c_str(),header->body["selfUserId"].asCString(), header->body["friendUserId"].asCString());
+            snprintf(targetString2,sizeof(targetString2),sql_2.c_str(),header->body["selfUserId"].asCString(),
+                header->body["friendUserId"].asCString(), header->body["selfUserId"].asCString(), 
+                header->body["friendUserId"].asCString());
             MYSQL_RES* res_2 = MySQL.mysql_select(targetString2);
             MYSQL_ROW rows_2;
             while (rows_2 = mysql_fetch_row(res_2)) {
-                isMakeFriend = true;
-            }
-
-            string sql_3 = "select * from friendmaking where friendUserId = '%s' and selfUserId = '%s';";
-            char targetString3[1024];
-            snprintf(targetString3, sizeof(targetString3), sql_3.c_str(), header->body["selfUserId"].asCString(), header->body["friendUserId"].asCString());
-            MYSQL_RES* res_3 = MySQL.mysql_select(targetString3);
-            MYSQL_ROW rows_3;
-            while (rows_3 = mysql_fetch_row(res_3)) {
                 isMakeFriend = true;
             }
 
@@ -214,12 +211,15 @@ private:
                 //如果不是好友
                 msg.body["result"] = 1;
                 msg.body["data"] = Json::Value("Succeeded in adding a friend");
-
                 string sql_4 = "insert into friendmaking values ('%s','%s',CURRENT_TIMESTAMP,UUID_SHORT());";
                 char targetString4[1024];
                 snprintf(targetString4, sizeof(targetString4), sql_4.c_str(), header->body["selfUserId"].asCString(), header->body["friendUserId"].asCString());
-
                 MySQL.mysql_DML(targetString4);
+                //响应更新
+                MyProtoMsg msgToFriend;
+                msgToFriend.head.server = CMD_FRIEND_ADD;
+                msgToFriend.body["friendUserId"] = Json::Value(header->body["friendUserId"]);
+                SendToFriendForUpdate(pClient, header, msgToFriend);
                 printf("insert successful");
             }
             else {
@@ -238,9 +238,11 @@ private:
     }
     void GetFriends(ClientSocket* pClient, MyProtoMsg* header) {
         printf("recvClient<Socket=%d>requset:CMD_GET_FRIEND,dataLength:%d\n", (int)pClient->sockfd(), header->head.len);
-        string sql_1 = "select * from friendmaking where selfUserId = '%s' or friendUserId = '%s';";
+        string sql_1 = "select selfUserId,friendUserId,addDate,recordId,cur_socket,`status`\
+            from friendmaking JOIN logininfo on id != '%s' \
+            WHERE (selfUserId=id or friendUserId = id)  and (selfUserId='%s' or friendUserId = '%s');";
         char targetString1[1024];
-        snprintf(targetString1, sizeof(targetString1), sql_1.c_str(), header->body["selfUserId"].asCString(), header->body["selfUserId"].asCString());
+        snprintf(targetString1, sizeof(targetString1), sql_1.c_str(), header->body["selfUserId"].asCString(), header->body["selfUserId"].asCString(), header->body["selfUserId"].asCString());
         MYSQL_RES* res_1 = MySQL.mysql_select(targetString1);
         MYSQL_ROW rows_1;
         
@@ -256,10 +258,59 @@ private:
             }
             temp["addDate"] = Json::Value(rows_1[2]);
             temp["recordId"] = Json::Value(rows_1[3]);
+            if (rows_1[4] == nullptr) {
+                temp["cur_socket"] = Json::Value("NULL");
+            }
+            else {
+                temp["cur_socket"] = Json::Value(rows_1[4]);
+            }
+            
+            temp["status"] = Json::Value(rows_1[5]);
             root.body["friendInfo"].append(temp);
         }
         pClient->SendData(&root);
     }
+    void DelFriend(ClientSocket* pClient, MyProtoMsg* header) {
+        //处理删除事件
+        printf("recvClient<Socket=%d>requset:CMD_DEL_FRIEND,dataLength:%d\n", (int)pClient->sockfd(), header->head.len);
+        string sql = "delete from friendmaking where (selfUserId = '%s' and friendUserId = '%s') or (selfUserId = '%s' and friendUserId = '%s');";
+        char targetString[1024];
+        snprintf(targetString, sizeof(targetString), 
+            sql.c_str(), header->body["selfUserId"].asCString(), 
+            header->body["friendUserId"].asCString(), header->body["friendUserId"].asCString(), 
+            header->body["selfUserId"].asCString());
+        MySQL.mysql_DML(targetString);
+        MyProtoMsg msg;
+        msg.head.server = CMD_DEL_FRIEND_RESULT;
+        msg.body["friendId"] = header->body["friendUserId"];
+        pClient->SendData(&msg);
+    }
+public:
+    void SendToFriendForLogin(ClientSocket* pClient, MyProtoMsg& msgToFriend) {
+        //通知好友上线
+        string sql_3 = "select id,cur_socket,`status`\
+                                from friendmaking JOIN logininfo on id != '%s' \
+                                WHERE (selfUserId=id or friendUserId = id)  and (selfUserId='%s' or friendUserId = '%s') and status = 1;";
+        char targetString3[1024];
+        snprintf(targetString3, sizeof(targetString3), sql_3.c_str(),pClient->getUserID().c_str(), pClient->getUserID().c_str(), pClient->getUserID().c_str());
+        MYSQL_RES* res_3 = MySQL.mysql_select(targetString3);
+        MYSQL_ROW rows_3;
+        while (rows_3 = mysql_fetch_row(res_3)) {
+            pClient->SendData(&msgToFriend, atoi(rows_3[1]));
+        }
+    }
+    void SendToFriendForUpdate(ClientSocket* pClient, MyProtoMsg* header,MyProtoMsg& msgToFriend) {
+        //通知已添加的在线好友
+        string sql_1 = "select cur_socket from logininfo where id = '%s' and status = 1;";
+        char targetString1[1024];
+        snprintf(targetString1, sizeof(targetString1), sql_1.c_str(), header->body["friendUserId"].asCString());
+        MYSQL_RES* res_1 = MySQL.mysql_select(targetString1);
+        MYSQL_ROW rows_1;
+        while (rows_1 = mysql_fetch_row(res_1)) {
+            pClient->SendData(&msgToFriend, atoi(rows_1[0]));
+        }
+    }
+
 };
 
 int main() {
