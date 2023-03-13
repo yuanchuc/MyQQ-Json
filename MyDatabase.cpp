@@ -62,13 +62,14 @@ void MyDatabase::mysql_create(const char* sql)
 {
 	mysql_Query(sql);
 }
-void MyDatabase::mysql_DML(const char* sql)
+bool MyDatabase::mysql_DML(const char* sql)
 {
 	mysql_Query(sql);
 	if (Affect <= 0) {
 		cout << sql << "\nActual execution failure\n" << endl;
-		return;
+		return false;
 	}
+	return true;
 	
 }
 MYSQL_RES* MyDatabase::mysql_select(const char * sql) {

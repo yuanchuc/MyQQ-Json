@@ -28,7 +28,7 @@ public:
 	void mysql_Query(const char* sql);//sql语句执行
 	void mysql_create(const char* sql);	//创建表结构
 	MYSQL_RES* mysql_select(const char* sql);		//表数据查询
-	void mysql_DML(const char * sql);	//添加表数据
+	bool mysql_DML(const char * sql);	//添加表数据
 	MYSQL_RES* res;//结果集
 	~MyDatabase();		//释放数据库资源
 };

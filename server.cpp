@@ -218,7 +218,7 @@ private:
                 //响应更新
                 MyProtoMsg msgToFriend;
                 msgToFriend.head.server = CMD_FRIEND_ADD;
-                msgToFriend.body["friendUserId"] = Json::Value(header->body["friendUserId"]);
+                msgToFriend.body["friendUserId"] = Json::Value(header->body["selfUserId"]);
                 SendToFriendForUpdate(pClient, header, msgToFriend);
                 printf("insert successful");
             }
@@ -279,11 +279,32 @@ private:
             sql.c_str(), header->body["selfUserId"].asCString(), 
             header->body["friendUserId"].asCString(), header->body["friendUserId"].asCString(), 
             header->body["selfUserId"].asCString());
-        MySQL.mysql_DML(targetString);
-        MyProtoMsg msg;
-        msg.head.server = CMD_DEL_FRIEND_RESULT;
-        msg.body["friendId"] = header->body["friendUserId"];
-        pClient->SendData(&msg);
+        bool ret = MySQL.mysql_DML(targetString);
+        if (ret) {
+            //反馈结果
+            MyProtoMsg msgToself;
+            msgToself.head.server = CMD_DEL_FRIEND_RESULT;
+            msgToself.body["result"] = Json::Value(1);
+            msgToself.body["friendUserId"] = Json::Value(header->body["friendUserId"]);
+            msgToself.body["data"] = Json::Value("Deleted successfully");
+            pClient->SendData(&msgToself);
+            //通知好友被删除
+            MyProtoMsg msgToFriend;
+            msgToFriend.head.server = CMD_FRIEND_REDUCE;
+            msgToFriend.body["friendUserId"] = Json::Value(header->body["selfUserId"]);
+            SendToFriendForUpdate(pClient, header, msgToFriend);
+        }
+        else {
+            //反馈结果
+            MyProtoMsg msgToself;
+            msgToself.head.server = CMD_DEL_FRIEND_RESULT;
+            msgToself.body["result"] = Json::Value(0);
+            msgToself.body["friendUserId"] = Json::Value(header->body["friendUserId"]);
+            msgToself.body["data"] = Json::Value("ERROR,Deletion failure");
+            pClient->SendData(&msgToself);
+        }
+        
+        
     }
 public:
     void SendToFriendForLogin(ClientSocket* pClient, MyProtoMsg& msgToFriend) {
