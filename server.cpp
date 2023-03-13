@@ -179,8 +179,7 @@ private:
         
         printf("recvClient<Socket=%d>requset:CMD_FRIEND_MAKE,dataLength:%d\n", (int)pClient->sockfd(), header->head.len);
 
-        MyProtoMsg msg;
-        msg.head.server = CMD_FRIEND_MAKE_RESULT;
+        
         //验证该用户是否存在
         string sql_1 = "select * from logininfo where id = '%s'";
         char targetString1[1024];
@@ -191,22 +190,23 @@ private:
         while (rows_1 = mysql_fetch_row(res_1)) {
             isExist = true;
         }
-
+        MyProtoMsg msg;
+        msg.head.server = CMD_FRIEND_MAKE_RESULT;
         //strncpy(ret.friendId, FM->friendId,sizeof(FM->friendId));
         if (isExist) {
             //双向验证好友信息
             bool isMakeFriend = false;
             string sql_2 = "select * from friendmaking where (selfUserId = '%s' and friendUserId = '%s') or (friendUserId = '%s' and selfUserId = '%s');";
             char targetString2[1024];
-            snprintf(targetString2,sizeof(targetString2),sql_2.c_str(),header->body["selfUserId"].asCString(),
-                header->body["friendUserId"].asCString(), header->body["selfUserId"].asCString(), 
-                header->body["friendUserId"].asCString());
+            snprintf(targetString2,sizeof(targetString2),sql_2.c_str(), 
+                header->body["selfUserId"].asCString(),header->body["friendUserId"].asCString(), 
+                header->body["selfUserId"].asCString(),header->body["friendUserId"].asCString());
             MYSQL_RES* res_2 = MySQL.mysql_select(targetString2);
             MYSQL_ROW rows_2;
             while (rows_2 = mysql_fetch_row(res_2)) {
                 isMakeFriend = true;
             }
-
+            msg.body["friendUserId"] = Json::Value(header->body["friendUserId"]);
             if (!isMakeFriend) {
                 //如果不是好友
                 msg.body["result"] = 1;
@@ -215,6 +215,15 @@ private:
                 char targetString4[1024];
                 snprintf(targetString4, sizeof(targetString4), sql_4.c_str(), header->body["selfUserId"].asCString(), header->body["friendUserId"].asCString());
                 MySQL.mysql_DML(targetString4);
+                //查询登入状态
+                string sql_3 = "select status from logininfo where id = '%s'";
+                char targetString3[1024];
+                snprintf(targetString3, sizeof(targetString3), sql_3.c_str(),header->body["friendUserId"].asCString());
+                MYSQL_RES* res_3 = MySQL.mysql_select(targetString3);
+                MYSQL_ROW rows_3;
+                while (rows_3 = mysql_fetch_row(res_3)) {
+                    msg.body["status"] = Json::Value(rows_3[0]);
+                }
                 //响应更新
                 MyProtoMsg msgToFriend;
                 msgToFriend.head.server = CMD_FRIEND_ADD;
