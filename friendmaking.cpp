@@ -15,10 +15,8 @@ FriendMaking::FriendMaking(QString UserId,TcpSocketClient*s,QWidget *parent) :
 
 FriendMaking::~FriendMaking()
 {
-    socket->disconnect();
-
+    disconnect(socket,&TcpSocketClient::hasMsg,this,&FriendMaking::hasMsgDeal);
     delete ui;
-
 }
 
 void FriendMaking::on_insertButton_clicked()

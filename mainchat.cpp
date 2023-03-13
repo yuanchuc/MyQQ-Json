@@ -7,7 +7,7 @@ MainChat::MainChat(QString UserId,TcpSocketClient* s,QWidget *parent) :
 {
     ui->setupUi(this);
     setTabWidget();
-
+    initEvent();
 
     //初始化成员
     this->UserId = UserId;
@@ -44,6 +44,12 @@ void MainChat::hasMsgDeal(MyProtoMsg* header)
                 addNewItem(QString(info["friendUserId"].asCString()),QString(info["status"].asCString()));
             }
         }break;
+        case CMD_DEL_FRIEND_RESULT:{
+            if(header->body["result"].asInt()==1){
+                moveItemFriend(header->body["friendUserId"].asCString());
+            }
+            QMessageBox::information(this,"结果",QString::fromLocal8Bit(header->body["data"].asCString()));
+        }break;
         case CMD_FRIEND_LOGIN:{
             for(auto item:friendItems){
                 if(header->body["friendId"].asString()==item->getFriendId().toStdString()){
@@ -65,7 +71,9 @@ void MainChat::hasMsgDeal(MyProtoMsg* header)
         case CMD_FRIEND_ADD:{
             addNewItem(QString(header->body["friendUserId"].asCString()),"1");
         }break;
-
+        case CMD_FRIEND_REDUCE:{
+            moveItemFriend(header->body["friendUserId"].asCString());
+        }break;
     }
 }
 
@@ -91,7 +99,39 @@ void MainChat::initFriend()
      msg.body["selfUserId"] = this->UserId.toStdString().c_str();
     if(socket->b_isConnectState){
         socket->onSendData(msg);
-    }  
+    }
+}
+
+void MainChat::initEvent()
+{
+    /*重要：设置QListWidget的contextMenuPolicy属性，不然不能显示右键菜单*/
+    ui->listWidget1->setProperty("contextMenuPolicy", Qt::CustomContextMenu);
+    /*初始化一个包含两个Action(Delete和ClearAll)的菜单*/
+    popMenu_In_ListWidget_ = new QMenu(this);
+    action_Delete_In_ListWidget_ = new QAction(tr("Delete"), this);
+    popMenu_In_ListWidget_->addAction(action_Delete_In_ListWidget_);
+    qDebug()<<"初始化成功";
+    connect(this->action_Delete_In_ListWidget_, &QAction::triggered, this, &MainChat::onActionDelete);
+    //绑定处理函数
+    //*绑定右键显示菜单：在单击右键之后会执行槽函数， 槽函数中负责弹出右键菜单*/
+    connect(ui->listWidget1, SIGNAL(customContextMenuRequested(const QPoint &)),
+            this, SLOT(onCustomContextMenuRequested(const QPoint &)));
+}
+
+void MainChat::moveItemFriend(const char* friendId)
+{
+    for(int i=0;i<ui->listWidget1->count();i++){
+        QListWidgetItem * item = ui->listWidget1->item(i);
+        QWidget* widget = ui->listWidget1->itemWidget(item);
+        QString friendUserId = widget->findChild<QLabel*>("userIdLable")->text();
+        qDebug()<<friendUserId;
+        //对Item进行移除
+        if(friendUserId == friendId){
+            ui->listWidget1->removeItemWidget(item);
+            delete item;
+            break;
+        }
+    }
 }
 
 void MainChat::addNewItem(QString friendId, QString result)
@@ -103,6 +143,42 @@ void MainChat::addNewItem(QString friendId, QString result)
     ui->listWidget1->setItemWidget(item, widget);
     widget->show();
     friendItems.push_back(widget);
+}
+
+void MainChat::onActionDelete()
+{
+    qDebug()<<"删除被点击";
+    /*获取当前选中的Item*/
+    QList<QListWidgetItem*> items = ui->listWidget1->selectedItems();
+    if(items.count()>0){
+        foreach(QListWidgetItem* var, items) {
+            //获取item中的数据
+            QWidget*widget = ui->listWidget1->itemWidget(var);
+            qDebug()<<widget->findChild<QLabel*>("userIdLable")->text()<<"被删除";
+            QString friendUserId = widget->findChild<QLabel*>("userIdLable")->text();
+            //确定是否删除
+            if (QMessageBox::Yes == QMessageBox::question(this, QStringLiteral("操作"),
+             QStringLiteral("delete friend?\n %1").arg(friendUserId), QMessageBox::Yes | QMessageBox::No, QMessageBox::Yes))
+            {
+                MyProtoMsg msg;
+                msg.head.server = CMD_DEL_FRIEND;
+                msg.body["friendUserId"] = Json::Value(friendUserId.toStdString().c_str());
+                msg.body["selfUserId"] = Json::Value(this->UserId.toStdString().c_str());
+                socket->onSendData(msg);
+                ui->listWidget1->removeItemWidget(var);
+                items.removeOne(var);
+                delete var;
+             }
+
+         }
+    }
+}
+
+//事件处理函数
+void MainChat::onCustomContextMenuRequested(const QPoint &pos)
+{
+    /*弹出右键菜单*/
+    popMenu_In_ListWidget_->exec(QCursor::pos());
 }
 
 void MainChat::on_insertFriendButton_clicked()

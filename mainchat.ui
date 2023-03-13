@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>300</width>
-    <height>618</height>
+    <width>322</width>
+    <height>694</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -30,7 +30,7 @@
    <property name="geometry">
     <rect>
      <x>0</x>
-     <y>600</y>
+     <y>670</y>
      <width>159</width>
      <height>19</height>
     </rect>
@@ -57,8 +57,8 @@
     <rect>
      <x>0</x>
      <y>109</y>
-     <width>301</width>
-     <height>421</height>
+     <width>331</width>
+     <height>441</height>
     </rect>
    </property>
    <property name="tabPosition">
@@ -91,8 +91,8 @@
       <rect>
        <x>0</x>
        <y>0</y>
-       <width>301</width>
-       <height>401</height>
+       <width>321</width>
+       <height>421</height>
       </rect>
      </property>
     </widget>
@@ -118,13 +118,13 @@
     </attribute>
    </widget>
   </widget>
-  <widget class="QWidget" name="">
+  <widget class="QWidget" name="layoutWidget">
    <property name="geometry">
     <rect>
      <x>0</x>
-     <y>560</y>
-     <width>287</width>
-     <height>25</height>
+     <y>630</y>
+     <width>309</width>
+     <height>30</height>
     </rect>
    </property>
    <layout class="QHBoxLayout" name="horizontalLayout_2">

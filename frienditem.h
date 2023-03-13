@@ -2,6 +2,8 @@
 #define FRIENDITEM_H
 
 #include <QWidget>
+#include<QMouseEvent>
+#include<QMenu>
 #include"tcpsocketclient.h"
 #include"myproto.h"
 namespace Ui {
@@ -17,6 +19,7 @@ public:
     void setFriendId(QString Id);
     void setStatus(QString result);
     QString getFriendId();
+    //virtual void mousePressEvent(QMouseEvent *event);
 private slots:
 
 private:
@@ -25,6 +28,9 @@ private:
     QString userId;
     QString result;
     QString selfId;
+
+private:
+
 };
 
 #endif // FRIENDITEM_H

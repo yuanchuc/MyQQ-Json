@@ -24,6 +24,7 @@ private:
     Ui::FriendMaking *ui;
     TcpSocketClient* socket;
     QString UserId;
+
 };
 
 #endif // FRIENDMAKING_H
