@@ -12,7 +12,7 @@ class FriendMaking : public QWidget
 {
     Q_OBJECT
 signals:
-    void addNewFriend();
+    void addNewFriend(QString friendId,QString status);
 public:
     explicit FriendMaking(QString UserId,TcpSocketClient*s,QWidget *parent = nullptr);
     ~FriendMaking();

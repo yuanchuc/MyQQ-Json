@@ -40,7 +40,8 @@ void FriendMaking::hasMsgDeal(MyProtoMsg* header)
             QMessageBox::information(this,"添加提示",QString::fromLocal8Bit(header->body["data"].asCString()));
             qDebug()<<"data="<<QString::fromLocal8Bit(header->body["data"].asCString())<<endl;
             if(header->body["result"].asInt()==1){
-                emit addNewFriend();
+                emit addNewFriend(QString::fromLocal8Bit(header->body["friendUserId"].asCString()),
+                        QString::fromLocal8Bit(header->body["status"].asCString()));
             }
         }
     }

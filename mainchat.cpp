@@ -134,9 +134,9 @@ void MainChat::moveItemFriend(const char* friendId)
     }
 }
 
-void MainChat::addNewItem(QString friendId, QString result)
+void MainChat::addNewItem(QString friendId, QString status)
 {
-    friendItem* widget = new friendItem(socket,this->UserId,friendId,result,this);
+    friendItem* widget = new friendItem(socket,this->UserId,friendId,status,this);
     QListWidgetItem* item = new QListWidgetItem;
     item->setSizeHint(QSize(24, 36));
     ui->listWidget1->addItem(item);
@@ -184,7 +184,9 @@ void MainChat::onCustomContextMenuRequested(const QPoint &pos)
 void MainChat::on_insertFriendButton_clicked()
 {
     FriendMaking * FM = new FriendMaking(UserId,socket);
-    connect(FM,&FriendMaking::addNewFriend,this,&MainChat::initFriend);
+    connect(FM,&FriendMaking::addNewFriend,[this](QString friendId,QString status){
+        addNewItem(friendId,status);
+    });
     //设置父窗口不能操作
     FM->setWindowModality(Qt::ApplicationModal);
     FM->show();
