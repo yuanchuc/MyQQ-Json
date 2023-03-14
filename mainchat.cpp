@@ -36,6 +36,20 @@ void MainChat::hasMsgDeal(MyProtoMsg* header)
 {
     qDebug()<<"MainChat:header->server = "<<header->head.server;
     switch (header->head.server) {
+        case CMD_FRIEND_MAKE_SURE:{
+            if (QMessageBox::Yes == QMessageBox::question(this, QStringLiteral("响应"),
+             QStringLiteral("wants to add you\n %1").arg(QString::fromLocal8Bit(header->body["friendUserId"].asCString())),
+             QMessageBox::Yes | QMessageBox::No, QMessageBox::Yes))
+            {
+                addNewItem(QString::fromLocal8Bit(header->body["friendUserId"].asCString()),QString(header->body["status"].asCString()));
+                MyProtoMsg msg;
+                msg.head.server = CMD_FRIEND_MAKE_SURE_RESULT;
+                msg.body["result"] = Json::Value(1);
+                msg.body["selfUserId"] = Json::Value(this->UserId.toStdString().c_str());
+                msg.body["friendUserId"] = Json::Value(header->body["friendUserId"]);
+                socket->onSendData(msg);
+             }
+        }break;
         case CMD_GET_FRIEND_RESULT:{
             qDebug()<<"clear"<<endl;
             ui->listWidget1->clear();
@@ -69,7 +83,10 @@ void MainChat::hasMsgDeal(MyProtoMsg* header)
         }break;
 
         case CMD_FRIEND_ADD:{
-            addNewItem(QString(header->body["friendUserId"].asCString()),"1");
+            if(header->body["result"].asInt() == 1){
+                addNewItem(QString::fromLocal8Bit(header->body["friendUserId"].asCString()),QString(header->body["status"].asCString()));
+            }
+
         }break;
         case CMD_FRIEND_REDUCE:{
             moveItemFriend(header->body["friendUserId"].asCString());
