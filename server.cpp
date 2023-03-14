@@ -70,6 +70,8 @@ public:
                        break;
         case CMD_FRIEND_MAKE: FriendMaking(pClient, header);
             break;
+        case CMD_FRIEND_MAKE_SURE_RESULT: FriendSure(pClient, header);
+            break;
         case CMD_GET_FRIEND: GetFriends(pClient, header);
             break;
         case CMD_DEL_FRIEND: DelFriend(pClient, header);
@@ -209,24 +211,25 @@ private:
             msg.body["friendUserId"] = Json::Value(header->body["friendUserId"]);
             if (!isMakeFriend) {
                 //如果不是好友
-                msg.body["result"] = 1;
+                /*msg.body["result"] = 1;
                 msg.body["data"] = Json::Value("Succeeded in adding a friend");
                 string sql_4 = "insert into friendmaking values ('%s','%s',CURRENT_TIMESTAMP,UUID_SHORT());";
                 char targetString4[1024];
                 snprintf(targetString4, sizeof(targetString4), sql_4.c_str(), header->body["selfUserId"].asCString(), header->body["friendUserId"].asCString());
-                MySQL.mysql_DML(targetString4);
+                MySQL.mysql_DML(targetString4);*/
+                
+                //响应更新
+                MyProtoMsg msgToFriend;
+                msgToFriend.head.server = CMD_FRIEND_MAKE_SURE;
                 //查询登入状态
                 string sql_3 = "select status from logininfo where id = '%s'";
                 char targetString3[1024];
-                snprintf(targetString3, sizeof(targetString3), sql_3.c_str(),header->body["friendUserId"].asCString());
+                snprintf(targetString3, sizeof(targetString3), sql_3.c_str(), header->body["friendUserId"].asCString());
                 MYSQL_RES* res_3 = MySQL.mysql_select(targetString3);
                 MYSQL_ROW rows_3;
                 while (rows_3 = mysql_fetch_row(res_3)) {
-                    msg.body["status"] = Json::Value(rows_3[0]);
+                    msgToFriend.body["status"] = Json::Value(rows_3[0]);
                 }
-                //响应更新
-                MyProtoMsg msgToFriend;
-                msgToFriend.head.server = CMD_FRIEND_ADD;
                 msgToFriend.body["friendUserId"] = Json::Value(header->body["selfUserId"]);
                 SendToFriendForUpdate(pClient, header, msgToFriend);
                 printf("insert successful");
@@ -235,6 +238,7 @@ private:
                 //如果是好友 
                 msg.body["result"] = 0;
                 msg.body["data"] = Json::Value("You're already friends");
+                pClient->SendData(&msg);
             }
         }
         else {
@@ -242,8 +246,35 @@ private:
             msg.body["result"] = 0;
             msg.body["data"] = Json::Value("The user does not exist");
             printf("ERROR,no exists\n");
+            pClient->SendData(&msg);
         }
-        pClient->SendData(&msg);
+        
+    }
+    void FriendSure(ClientSocket* pClient, MyProtoMsg* header) {
+        printf("recvClient<Socket=%d>requset:CMD_FRIEND_MAKE_SURE_RESULT,dataLength:%d\n", (int)pClient->sockfd(), header->head.len);
+        //如果同意添加好友
+        if (header->body["result"].asInt() == 1) {
+            MyProtoMsg msgToFriend;
+            msgToFriend.head.server = CMD_FRIEND_ADD;
+            //查询登入状态
+            string sql_3 = "select status from logininfo where id = '%s'";
+            char targetString3[1024];
+            snprintf(targetString3, sizeof(targetString3), sql_3.c_str(), header->body["friendUserId"].asCString());
+            MYSQL_RES* res_3 = MySQL.mysql_select(targetString3);
+            MYSQL_ROW rows_3;
+            while (rows_3 = mysql_fetch_row(res_3)) {
+                msgToFriend.body["status"] = Json::Value(rows_3[0]);
+            }
+            msgToFriend.body["result"] = Json::Value(1);
+            msgToFriend.body["friendUserId"] = Json::Value(header->body["selfUserId"]);
+            msgToFriend.body["data"] = Json::Value("Succeeded in adding a friend");
+            string sql_1 = "insert into friendmaking values ('%s','%s',CURRENT_TIMESTAMP,UUID_SHORT());";
+            char targetString1[1024];
+            snprintf(targetString1, sizeof(targetString1), sql_1.c_str(), header->body["selfUserId"].asCString(), header->body["friendUserId"].asCString());
+            MySQL.mysql_DML(targetString1);
+            SendToFriendForUpdate(pClient, header, msgToFriend);
+            SendToFriendForUpdate(pClient, header, *header);
+        }
     }
     void GetFriends(ClientSocket* pClient, MyProtoMsg* header) {
         printf("recvClient<Socket=%d>requset:CMD_GET_FRIEND,dataLength:%d\n", (int)pClient->sockfd(), header->head.len);
