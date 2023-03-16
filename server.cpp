@@ -1,7 +1,7 @@
 
 #include"EasyTcpServer.hpp"
 #include<thread>
-
+#include<ctime>
 bool g_bRun = true;
 void cmdThread() {
     //3输入请求命令
@@ -23,6 +23,7 @@ void cmdThread() {
 class MyServer:public EasyTcpServer
 {
     MyDatabase MySQL;
+    
 public:
     MyServer() {
         if (MySQL.UserInfo_connect()) {
@@ -74,7 +75,10 @@ public:
             break;
         case CMD_GET_FRIEND: GetFriends(pClient, header);
             break;
-        case CMD_DEL_FRIEND: DelFriend(pClient, header);
+        case CMD_DEL_FRIEND: DelFriend(pClient, header); 
+            break;
+        case CMD_GET_VERIFY_MSG:GetVerifyMsg(pClient, header);
+            break;
         }
     }
 private:
@@ -230,7 +234,16 @@ private:
                 while (rows_3 = mysql_fetch_row(res_3)) {
                     msgToFriend.body["status"] = Json::Value(rows_3[0]);
                 }
+                //存储好友添加信息
+                string sql_4 = "insert into verifymsg value('%s','%s',CURRENT_TIMESTAMP,'%s',0)";
+                char targetString4[1024];
+                snprintf(targetString4, sizeof(targetString4), sql_4.c_str(), header->body["friendUserId"].asCString(), header->body["selfUserId"].asCString(), header->body["extraMsg"].asCString());
+                MySQL.mysql_DML(targetString4);
+                //补充数据
+                cout << measureTime() << endl;
                 msgToFriend.body["friendUserId"] = Json::Value(header->body["selfUserId"]);
+                msgToFriend.body["extraMsg"] = Json::Value(header->body["extraMsg"]);
+                msgToFriend.body["insertDate"] = Json::Value(measureTime());
                 SendToFriendForUpdate(pClient, header, msgToFriend);
                 printf("insert successful");
             }
@@ -256,24 +269,44 @@ private:
         if (header->body["result"].asInt() == 1) {
             MyProtoMsg msgToFriend;
             msgToFriend.head.server = CMD_FRIEND_ADD;
-            //查询登入状态
+            msgToFriend.body["status"] = Json::Value("1");
+            msgToFriend.body["result"] = Json::Value(1);
+            msgToFriend.body["friendUserId"] = Json::Value(header->body["selfUserId"]);
+            msgToFriend.body["data"] = Json::Value("Succeeded in adding a friend");
+            //同步好友状态
+            string sql_1 = "insert into friendmaking values ('%s','%s',CURRENT_TIMESTAMP,UUID_SHORT());";
+            char targetString1[1024];
+            snprintf(targetString1, sizeof(targetString1), sql_1.c_str(), header->body["selfUserId"].asCString(), header->body["friendUserId"].asCString());
+            MySQL.mysql_DML(targetString1);
+            //处理验证消息状态
+            string sql_2 = "update verifymsg set status = 1 where selfUserId = '%s' and friendUserId = '%s'and status = 0";
+            char targetString2[1024];
+            snprintf(targetString2, sizeof(targetString2), sql_2.c_str(), header->body["selfUserId"].asCString(), header->body["friendUserId"].asCString());
+            MySQL.mysql_DML(targetString2);
+            //发送数据到客户端
+            SendToFriendForUpdate(pClient, header, msgToFriend);
+            //查询好友当前状态
+            MyProtoMsg msgToSelf;
+            msgToSelf.head.server = CMD_FRIEND_ADD;
             string sql_3 = "select status from logininfo where id = '%s'";
             char targetString3[1024];
             snprintf(targetString3, sizeof(targetString3), sql_3.c_str(), header->body["friendUserId"].asCString());
             MYSQL_RES* res_3 = MySQL.mysql_select(targetString3);
             MYSQL_ROW rows_3;
             while (rows_3 = mysql_fetch_row(res_3)) {
-                msgToFriend.body["status"] = Json::Value(rows_3[0]);
+                msgToSelf.body["status"] = Json::Value(rows_3[0]);
             }
-            msgToFriend.body["result"] = Json::Value(1);
-            msgToFriend.body["friendUserId"] = Json::Value(header->body["selfUserId"]);
-            msgToFriend.body["data"] = Json::Value("Succeeded in adding a friend");
-            string sql_1 = "insert into friendmaking values ('%s','%s',CURRENT_TIMESTAMP,UUID_SHORT());";
+            msgToSelf.body["result"] = Json::Value(1);
+            msgToSelf.body["friendUserId"] = Json::Value(header->body["friendUserId"]);
+            msgToSelf.body["data"] = Json::Value("Succeeded in adding a friend");
+            pClient->SendData(&msgToSelf);
+        }
+        else {
+            //处理验证消息状态
+            string sql_1 = "update verifymsg set status = -1 where selfUserId = '%s' and friendUserId = '%s'and status = 0";
             char targetString1[1024];
             snprintf(targetString1, sizeof(targetString1), sql_1.c_str(), header->body["selfUserId"].asCString(), header->body["friendUserId"].asCString());
             MySQL.mysql_DML(targetString1);
-            SendToFriendForUpdate(pClient, header, msgToFriend);
-            SendToFriendForUpdate(pClient, header, *header);
         }
     }
     void GetFriends(ClientSocket* pClient, MyProtoMsg* header) {
@@ -346,6 +379,24 @@ private:
         
         
     }
+    void GetVerifyMsg(ClientSocket* pClient, MyProtoMsg* header) {
+        string sql_1 = "select * from verifymsg where selfUserId = '%s';";
+        char targetString1[1024];
+        snprintf(targetString1, sizeof(targetString1), sql_1.c_str(), header->body["selfUserId"].asCString());
+        MYSQL_RES* res_1 = MySQL.mysql_select(targetString1);
+        MYSQL_ROW rows_1;
+        MyProtoMsg msg;
+        msg.head.server = CMD_GET_VERIFY_MSG_RESULT;
+        while (rows_1 = mysql_fetch_row(res_1)) {
+            Json::Value temp;
+            temp["friendUserId"] = Json::Value(rows_1[1]);
+            temp["insertDate"] = Json::Value(rows_1[2]);
+            temp["extraMsg"] = Json::Value(rows_1[3]);
+            temp["status"] = Json::Value(rows_1[4]);
+            msg.body["info"].append(temp);
+        }
+        pClient->SendData(&msg);
+    }
 public:
     void SendToFriendForLogin(ClientSocket* pClient, MyProtoMsg& msgToFriend) {
         //通知好友上线
@@ -371,10 +422,19 @@ public:
             pClient->SendData(&msgToFriend, atoi(rows_1[0]));
         }
     }
-
+    char* measureTime() {
+        time_t nowtime;
+        time(&nowtime); //获取1900年1月1日0点0分0秒到现在经过的秒数
+        tm* p = localtime(&nowtime);
+        string str = "%04d:%02d:%02d %02d:%02d:%02d";
+        char time[1024];
+        snprintf(time, sizeof(time), str.c_str(), p->tm_year + 1900, p->tm_mon + 1, p->tm_mday, p->tm_hour, p->tm_min, p->tm_sec);
+        return time;
+    }
 };
 
 int main() {
+        
     MyServer server;
     server.InitSocket();
     server.Bind(nullptr, 4567);
