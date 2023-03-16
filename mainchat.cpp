@@ -10,6 +10,7 @@ MainChat::MainChat(QString UserId,TcpSocketClient* s,QWidget *parent) :
     initEvent();
 
     //初始化成员
+    VM = nullptr;
     this->UserId = UserId;
     socket = s;
     ui->userIdLabel->setText(this->UserId);
@@ -41,7 +42,6 @@ void MainChat::hasMsgDeal(MyProtoMsg* header)
              QStringLiteral("wants to add you\n %1").arg(QString::fromLocal8Bit(header->body["friendUserId"].asCString())),
              QMessageBox::Yes | QMessageBox::No, QMessageBox::Yes))
             {
-                addNewItem(QString::fromLocal8Bit(header->body["friendUserId"].asCString()),QString(header->body["status"].asCString()));
                 MyProtoMsg msg;
                 msg.head.server = CMD_FRIEND_MAKE_SURE_RESULT;
                 msg.body["result"] = Json::Value(1);
@@ -207,4 +207,19 @@ void MainChat::on_insertFriendButton_clicked()
     //设置父窗口不能操作
     FM->setWindowModality(Qt::ApplicationModal);
     FM->show();
+}
+
+void MainChat::on_verifyMsgButton_clicked()
+{
+    if(!VM){
+        VM = new VerifyMsg(socket,UserId);
+        VM->show();
+    }else{
+        VM->close();
+        delete VM;
+        VM = nullptr;
+        VM = new VerifyMsg(socket,UserId);
+        VM->show();
+    }
+
 }

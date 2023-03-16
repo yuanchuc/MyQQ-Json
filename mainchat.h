@@ -11,6 +11,7 @@
 #include"tcpsocketclient.h"
 #include"friendmaking.h"
 #include"frienditem.h"
+#include"verifymsg.h"
 namespace Ui {
 class MainChat;
 }
@@ -28,6 +29,8 @@ private slots:
     void onDisConnect();
     void on_insertFriendButton_clicked();
     void onCustomContextMenuRequested(const QPoint &pos);
+    void on_verifyMsgButton_clicked();
+
 private:
     Ui::MainChat *ui;
     TcpSocketClient* socket;
@@ -43,7 +46,7 @@ private:
 private:
     QMenu *popMenu_In_ListWidget_;/*弹出菜单*/
     QAction *action_Delete_In_ListWidget_;/*菜单上的Action*/
-
+    VerifyMsg* VM;
 };
 
 #endif // MAINCHAT_H

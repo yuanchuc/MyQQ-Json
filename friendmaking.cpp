@@ -30,7 +30,9 @@ void FriendMaking::on_insertButton_clicked()
     msg.head.server = CMD_FRIEND_MAKE;
     msg.body["friendUserId"] = UserId.toUtf8().data();
     msg.body["selfUserId"] = this->UserId.toUtf8().data();
+    msg.body["extraMsg"] = Json::Value(ui->extraMsgEdit->toPlainText().toUtf8().data());
     socket->onSendData(msg);
+    this->close();
 }
 
 void FriendMaking::hasMsgDeal(MyProtoMsg* header)
