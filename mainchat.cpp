@@ -217,7 +217,6 @@ void MainChat::on_verifyMsgButton_clicked()
     }else{
         VM->close();
         delete VM;
-        VM = nullptr;
         VM = new VerifyMsg(socket,UserId);
         VM->show();
     }

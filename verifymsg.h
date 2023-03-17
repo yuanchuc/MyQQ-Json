@@ -18,7 +18,7 @@ public:
 public slots:
     void hasMsgDeal(MyProtoMsg* header);
 public:
-    void addNewItem(QString friendId,QString extraMsg,QString insertDate,QString status = 0);
+    void addNewItem(QString friendId,QString extraMsg,QString insertDate,QString status ="0");
     void initVerifyMsg();
 private:
 

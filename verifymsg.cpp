@@ -6,7 +6,7 @@ VerifyMsg::VerifyMsg(TcpSocketClient* s,QString UserId,QWidget *parent) :
     ui(new Ui::VerifyMsg)
 {
     ui->setupUi(this);
-    setAttribute(Qt::WA_DeleteOnClose);
+    //setAttribute(Qt::WA_DeleteOnClose);
     this->socket = s;
     this->UserId = UserId;
     connect(socket,&TcpSocketClient::hasMsg,this,&VerifyMsg::hasMsgDeal);
@@ -16,7 +16,6 @@ VerifyMsg::VerifyMsg(TcpSocketClient* s,QString UserId,QWidget *parent) :
 VerifyMsg::~VerifyMsg()
 {
     delete ui;
-    ui = nullptr;
 }
 
 void VerifyMsg::hasMsgDeal(MyProtoMsg *header)
