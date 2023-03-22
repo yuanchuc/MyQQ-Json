@@ -54,7 +54,7 @@ public:
         //初始化数据
         string updt = "update logininfo set cur_socket = null,status = 0 where id = '%s';";
         char targetString[1024];
-        snprintf(targetString, sizeof(targetString), updt.c_str(), pClient->getUserID()); 
+        snprintf(targetString, sizeof(targetString), updt.c_str(), pClient->getUserID().c_str()); 
         MySQL.mysql_DML(targetString);
         printf("client<%d> leave\n", (int)pClient->sockfd());
     }
@@ -150,7 +150,7 @@ private:
         printf("recvClient<Socket=%d>requset:CMD_LOGON,dataLength:%d\n", (int)pClient->sockfd(), header->head.len);
         
         MyProtoMsg msg;
-        msg.head.server = CMD_LOGON;
+        msg.head.server = CMD_LOGON_RESULT;
         if (isLogon(header->body["userId"].asCString())) {
             //账号已经被注册
             msg.body["result"] = Json::Value(0);
@@ -196,11 +196,13 @@ private:
                 snprintf(targetString4, sizeof(targetString4), sql_4.c_str(), header->body["friendUserId"].asCString(), header->body["selfUserId"].asCString(), header->body["extraMsg"].asCString());
                 MySQL.mysql_DML(targetString4);
                 //补充数据
-                cout << measureTime() << endl;
+                char* curTime = measureTime();
+                cout << curTime << endl;
                 msgToFriend.body["friendUserId"] = Json::Value(header->body["selfUserId"]);
                 msgToFriend.body["extraMsg"] = Json::Value(header->body["extraMsg"]);
-                msgToFriend.body["insertDate"] = Json::Value(measureTime());
+                msgToFriend.body["insertDate"] = Json::Value(curTime);
                 SendToFriendForUpdate(pClient, header, msgToFriend);
+                delete[] curTime;
                 printf("insert successful");
             }
             else {
@@ -389,7 +391,7 @@ public:
         time(&nowtime); //获取1900年1月1日0点0分0秒到现在经过的秒数
         tm* p = localtime(&nowtime);
         string str = "%04d:%02d:%02d %02d:%02d:%02d";
-        char time[1024];
+        char* time = new char[1024];
         snprintf(time, sizeof(time), str.c_str(), p->tm_year + 1900, p->tm_mon + 1, p->tm_mday, p->tm_hour, p->tm_min, p->tm_sec);
         return time;
     }
@@ -430,9 +432,10 @@ public:
             if (!strcmp(rows[0],"1")) return true;
             else return false;
         }
+        return false;
     }
     bool isLogon(const char* UserId) {
-        string sql_1 = "select * from logininfo where id = '%d'";
+        string sql_1 = "select * from logininfo where id = '%s'";
         char targetString1[1024];
         snprintf(targetString1, sizeof(targetString1), sql_1.c_str(), UserId);
         MYSQL_RES* res = MySQL.mysql_select(targetString1);
