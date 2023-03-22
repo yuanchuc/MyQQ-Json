@@ -35,7 +35,6 @@ private:
     Ui::MainChat *ui;
     TcpSocketClient* socket;
     QString UserId;
-    vector<friendItem*> friendItems;
 private:
     void setTabWidget();//初始化TabWidget
     void initFriend();  //初始化好友

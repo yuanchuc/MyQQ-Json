@@ -20,8 +20,9 @@ public:
     void setStatus(QString result);
     QString getFriendId();
     //virtual void mousePressEvent(QMouseEvent *event);
+    void mouseDoubleClickEvent(QMouseEvent* e);
 private slots:
-
+    void hasMsgDeal(MyProtoMsg* header);
 private:
     TcpSocketClient* socket;
     Ui::friendItem *ui;

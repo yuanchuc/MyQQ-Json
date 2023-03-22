@@ -13,6 +13,7 @@ friendItem::friendItem(TcpSocketClient* s,QString selfId,QString userId,QString 
     this->selfId = selfId;
     setFriendId(userId);
     setStatus(result);
+    connect(socket,&TcpSocketClient::hasMsg,this,&friendItem::hasMsgDeal);
 }
 
 
@@ -44,4 +45,28 @@ void friendItem::setStatus(QString result)
 QString friendItem::getFriendId()
 {
     return this->userId;
+}
+
+void friendItem::mouseDoubleClickEvent(QMouseEvent *e)
+{
+
+}
+
+void friendItem::hasMsgDeal(MyProtoMsg *header)
+{
+    switch (header->head.server) {
+        case CMD_FRIEND_LOGIN:{
+            if(header->body["friendId"].asCString()==ui->userIdLable->text()){
+                setStatus("1");
+                break;
+            }
+        }break;
+
+        case CMD_FRIEND_LOGOUT:{
+            if(header->body["friendId"].asCString()==ui->userIdLable->text()){
+                setStatus("0");
+                break;
+            }
+        }break;
+    }
 }

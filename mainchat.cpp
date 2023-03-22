@@ -37,6 +37,9 @@ void MainChat::hasMsgDeal(MyProtoMsg* header)
 {
     qDebug()<<"MainChat:header->server = "<<header->head.server;
     switch (header->head.server) {
+        case CMD_FRIEND_MAKE_RESULT:{
+            QMessageBox::information(this,"提示",QString::fromLocal8Bit(header->body["data"].asCString()));
+        }break;
         case CMD_FRIEND_MAKE_SURE:{
             if (QMessageBox::Yes == QMessageBox::question(this, QStringLiteral("响应"),
              QStringLiteral("wants to add you\n %1").arg(QString::fromLocal8Bit(header->body["friendUserId"].asCString())),
@@ -64,24 +67,6 @@ void MainChat::hasMsgDeal(MyProtoMsg* header)
             }
             QMessageBox::information(this,"结果",QString::fromLocal8Bit(header->body["data"].asCString()));
         }break;
-        case CMD_FRIEND_LOGIN:{
-            for(auto item:friendItems){
-                if(header->body["friendId"].asString()==item->getFriendId().toStdString()){
-                    item->setStatus("1");
-                    break;
-                }
-            }
-        }break;
-
-        case CMD_FRIEND_LOGOUT:{
-            for(auto item:friendItems){
-                if(header->body["friendId"].asString()==item->getFriendId().toStdString()){
-                    item->setStatus("0");
-                    break;
-                }
-            }
-        }break;
-
         case CMD_FRIEND_ADD:{
             if(header->body["result"].asInt() == 1){
                 addNewItem(QString::fromLocal8Bit(header->body["friendUserId"].asCString()),QString(header->body["status"].asCString()));
@@ -146,6 +131,7 @@ void MainChat::moveItemFriend(const char* friendId)
         if(friendUserId == friendId){
             ui->listWidget1->removeItemWidget(item);
             delete item;
+
             break;
         }
     }
@@ -159,7 +145,6 @@ void MainChat::addNewItem(QString friendId, QString status)
     ui->listWidget1->addItem(item);
     ui->listWidget1->setItemWidget(item, widget);
     widget->show();
-    friendItems.push_back(widget);
 }
 
 void MainChat::onActionDelete()
@@ -181,10 +166,12 @@ void MainChat::onActionDelete()
                 msg.head.server = CMD_DEL_FRIEND;
                 msg.body["friendUserId"] = Json::Value(friendUserId.toStdString().c_str());
                 msg.body["selfUserId"] = Json::Value(this->UserId.toStdString().c_str());
-                socket->onSendData(msg);
-                ui->listWidget1->removeItemWidget(var);
-                items.removeOne(var);
-                delete var;
+                if(socket->b_isConnectState){
+                    socket->onSendData(msg);
+                    ui->listWidget1->removeItemWidget(var);
+                    items.removeOne(var);
+                    delete var;
+                }
              }
 
          }

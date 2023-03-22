@@ -50,12 +50,7 @@ void LoginView::on_loginButton_clicked()
             ui->cancelLoginButton->hide();
             return;
         }
-        if(!socket->b_isConnectState) {
-            loginViewReduce();
-            ui->cancelLoginButton->hide();
-            QMessageBox::warning(this,"登入提示","当前网络未连接");
-            return;
-        }
+
         QString userId = ui->loginIdInput->currentText();
         QString pwd = ui->loginPwdInput->text();
         MyProtoMsg msg1;
@@ -64,7 +59,14 @@ void LoginView::on_loginButton_clicked()
         qDebug()<<userId;
         msg1.body["userId"] = Json::Value(userId.toStdString().c_str()) ;
         msg1.body["pwd"] = Json::Value(pwd.toStdString().c_str());
-        socket->onSendData(msg1);
+        if(!socket->b_isConnectState) {
+            loginViewReduce();
+            ui->cancelLoginButton->hide();
+            QMessageBox::warning(this,"登入提示","当前网络未连接");
+            return;
+        }else{
+            socket->onSendData(msg1);
+        }
     });
 }
 
@@ -102,7 +104,7 @@ void LoginView::hasMsgDeal(MyProtoMsg* header)
                 writeQComBoxItem();
                 createNewFrame();
             }
-        }
+        }break;
     }
 }
 

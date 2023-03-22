@@ -74,8 +74,8 @@ void TcpSocketClient::onRecvData()
     while (m_TcpSocket->bytesAvailable() > 0)
     {
         unsigned int len;
-        char* Buf= new char[1024];
-        len = (unsigned int)m_TcpSocket->read(Buf,1024);
+        char Buf[102400];
+        len = (unsigned int)m_TcpSocket->read(Buf,102400);
 
         MyProtoDecode myDecode;
         myDecode.init();
