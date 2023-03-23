@@ -42,8 +42,6 @@ void logonView::on_pushButton_clicked()
     msg1.head.server = CMD_LOGON;
     msg1.body["userId"] = Json::Value(UserId.toStdString().c_str());
     msg1.body["pwd"] = Json::Value(Pwd.toStdString().c_str());
-    socket->onSendData(msg1);
-
     if(socket->b_isConnectState){
         this->socket->onSendData(msg1);
     }else{

@@ -18,8 +18,8 @@ LoginView::LoginView(QWidget *parent) :
     readComBoxItem();
 
     //获取ip地址和端口号
-    //IP = "8.130.74.114";
-    IP = "192.168.56.1";
+    IP = "8.130.74.114";
+    //IP = "192.168.56.1";
     port = "4567";
     //socket启动
     socket = new TcpSocketClient;
@@ -250,6 +250,7 @@ void LoginView::initAnimation()
 
 void LoginView::loginViewReduce()
 {
+    ui->cancelLoginButton->hide();
     m_pAnimationlogin->stop();
     m_pAnimationlogin->setPropertyName("pos");    //指定动画属性名
     m_pAnimationlogin->setDuration(250);    //设置动画时间（单位：毫秒）
