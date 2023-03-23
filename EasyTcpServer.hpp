@@ -23,7 +23,6 @@
 #include<atomic>
 #include<string>
 #include"json/json.h"
-#include"MyDatabase.h"
 #include"CELLTimestamp.hpp"
 #include"myproto.h"
 
@@ -185,7 +184,7 @@ public:
 			//timeval t = { 1,0 };//非阻塞
 			int ret = (int)select(maxSock + 1, &fdRead, nullptr, nullptr, nullptr);//if(timeout==NULL) 没有数据时则会造成阻塞
 			if (ret < 0) {
-				printf("select task over.\n");
+				printf("Procedure: select task over.\n");
 				Close();
 				return ;
 			}
@@ -211,7 +210,7 @@ public:
 
 		len = recv(pClient->sockfd(), _szRecv, RECV_BUFF_SIZE, 0);
 		if (len <= 0) {
-			printf("client<%d>has already exit\n", (int)pClient->sockfd());
+			printf("Procedure: client<%d>has already exit\n", (int)pClient->sockfd());
 			return -1;
 		}
 		MyProtoDecode myDecode;
@@ -313,15 +312,15 @@ public:
 #endif
 		 // 1建立一个socket
 		if (INVALID_SOCKET != _sock) {
-			printf("<socket = %d>closeOldLink\n", (int)_sock);
+			printf("Procedure: <socket = %d>closeOldLink\n", (int)_sock);
 			Close();
 		}
 		_sock = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
 		if (INVALID_SOCKET == _sock) {
-			printf("ERROR，Create:socket=<%d>error....\n", (int)_sock);
+			printf("Procedure: ERROR，Create:socket=<%d>error....\n", (int)_sock);
 		}
 		else {
-			printf("Create:socket=<%d>success....\n", (int)_sock);
+			printf("Procedure: Create:socket=<%d>success....\n", (int)_sock);
 		}
 		return _sock;
 	}
@@ -347,11 +346,11 @@ public:
 #endif
 		int ret = bind(_sock, (sockaddr*)&_sin, sizeof(_sin));
 		if (SOCKET_ERROR == ret) {
-			printf("ERROR,bind Net Port<%d>error...\n", port);
+			printf("Procedure: ERROR,bind Net Port<%d>error...\n", port);
 			//端口被占用
 		}
 		else {
-			printf("bind Net Port<%d>success...\n", port);
+			printf("Procedure: bind Net Port<%d>success...\n", port);
 		}
 		return ret;
 	}
@@ -360,10 +359,10 @@ public:
 		//backlog:需要等待多少人进行链接
 		int ret = listen(_sock, n);
 		if (SOCKET_ERROR == ret) {
-			printf("socket=<%d>ERROR,Listen Net port error...\n", (int)_sock);
+			printf("Procedure: socket=<%d>ERROR,Listen Net port error...\n", (int)_sock);
 		}
 		else {
-			printf("socket=<%d>Listen Net port success...\n", (int)_sock);
+			printf("Procedure: socket=<%d>Listen Net port success...\n", (int)_sock);
 		}
 		return ret;
 	}
@@ -379,7 +378,7 @@ public:
 		cSock = accept(_sock, (sockaddr*)&clientAddr, (socklen_t*)&nAddrLen);
 #endif
 		if (cSock == INVALID_SOCKET) {//无效的socket
-			printf("ERROR: socket=<%d>,An invalid client SOCKET was received...\n", (int)_sock);
+			printf("Procedure: ERROR: socket=<%d>,An invalid client SOCKET was received...\n", (int)_sock);
 		}
 		else {
 			//将新客户端分配给客户数量最少的cellServer
@@ -441,7 +440,7 @@ public:
 			timeval t = { 1,0 };//非阻塞
 			int ret = (int)select(_sock + 1, &fdRead, 0, 0, &t);//if(timeout==NULL) 没有数据时则会造成阻塞
 			if (ret < 0) {
-				printf("Accept select task over\n");
+				printf("Procedure: Accept select task over\n");
 				Close();
 				return false;
 			}
@@ -465,7 +464,7 @@ public:
 	virtual void time4msg() {
 		auto t1 = _tTime.getElapsedSecond();
 		if (t1 >= 1.0){
-			printf("thread<%d>time<%lf>,socket<%d>,clients<%d>,_recvCount<%d>\n",(int) _cellServers.size() , t1, (int)_sock, (int)_clientCount, (int)(_msgCount/t1));
+			printf("Procedure: thread<%d>time<%lf>,socket<%d>,clients<%d>,_recvCount<%d>\n",(int) _cellServers.size() , t1, (int)_sock, (int)_clientCount, (int)(_msgCount/t1));
 			_msgCount = 0;
 			_tTime.update();
 		}

@@ -18,13 +18,16 @@
     <ClCompile Include="server.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
-    <ClCompile Include="MyDatabase.cpp">
-      <Filter>源文件</Filter>
-    </ClCompile>
     <ClCompile Include="jsoncpp.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
     <ClCompile Include="myproto.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="MysqlConn.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="ConnectionPool.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
   </ItemGroup>
@@ -35,9 +38,6 @@
     <ClInclude Include="CELLTimestamp.hpp">
       <Filter>头文件</Filter>
     </ClInclude>
-    <ClInclude Include="MyDatabase.h">
-      <Filter>头文件</Filter>
-    </ClInclude>
     <ClInclude Include="memory.h">
       <Filter>头文件</Filter>
     </ClInclude>
@@ -45,6 +45,12 @@
       <Filter>头文件</Filter>
     </ClInclude>
     <ClInclude Include="myproto.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="MysqlConn.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="ConnectionPool.h">
       <Filter>头文件</Filter>
     </ClInclude>
   </ItemGroup>

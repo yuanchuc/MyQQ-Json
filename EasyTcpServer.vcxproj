@@ -172,18 +172,20 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="ConnectionPool.cpp" />
     <ClCompile Include="jsoncpp.cpp" />
-    <ClCompile Include="MyDatabase.cpp" />
     <ClCompile Include="myproto.cpp" />
+    <ClCompile Include="MysqlConn.cpp" />
     <ClCompile Include="server.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="CELLTimestamp.hpp" />
+    <ClInclude Include="ConnectionPool.h" />
     <ClInclude Include="EasyTcpServer.hpp" />
     <ClInclude Include="json\json.h" />
     <ClInclude Include="memory.h" />
-    <ClInclude Include="MyDatabase.h" />
     <ClInclude Include="myproto.h" />
+    <ClInclude Include="MysqlConn.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
