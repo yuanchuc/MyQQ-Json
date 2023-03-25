@@ -13,6 +13,8 @@ friendItem::friendItem(TcpSocketClient* s,QString selfId,QString userId,QString 
     this->selfId = selfId;
     setFriendId(userId);
     setStatus(result);
+    //服务器断开连接时
+    connect(socket,&TcpSocketClient::disConnect,this,&friendItem::onDisConnect);
     connect(socket,&TcpSocketClient::hasMsg,this,&friendItem::hasMsgDeal);
 }
 
@@ -69,4 +71,9 @@ void friendItem::hasMsgDeal(MyProtoMsg *header)
             }
         }break;
     }
+}
+
+void friendItem::onDisConnect()
+{
+    setStatus("0");
 }

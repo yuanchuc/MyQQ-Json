@@ -21,7 +21,7 @@ class MainChat : public QWidget
     Q_OBJECT
 
 public:
-    explicit MainChat(QString UserId,TcpSocketClient* s,QWidget *parent = nullptr);
+    explicit MainChat(QString UserId,QString pwd,TcpSocketClient* s,QWidget *parent = nullptr);
     ~MainChat();
 private slots:
     void Connected();
@@ -35,6 +35,7 @@ private:
     Ui::MainChat *ui;
     TcpSocketClient* socket;
     QString UserId;
+    QString pwd;
 private:
     void setTabWidget();//初始化TabWidget
     void initFriend();  //初始化好友

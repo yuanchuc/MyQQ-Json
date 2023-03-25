@@ -23,6 +23,7 @@ public:
     void mouseDoubleClickEvent(QMouseEvent* e);
 private slots:
     void hasMsgDeal(MyProtoMsg* header);
+    void onDisConnect();
 private:
     TcpSocketClient* socket;
     Ui::friendItem *ui;

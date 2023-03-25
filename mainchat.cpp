@@ -1,7 +1,7 @@
 #include "mainchat.h"
 #include "ui_mainchat.h"
 
-MainChat::MainChat(QString UserId,TcpSocketClient* s,QWidget *parent) :
+MainChat::MainChat(QString UserId,QString pwd,TcpSocketClient* s,QWidget *parent) :
     QWidget(parent),
     ui(new Ui::MainChat)
 {
@@ -12,6 +12,7 @@ MainChat::MainChat(QString UserId,TcpSocketClient* s,QWidget *parent) :
     //初始化成员
     VM = nullptr;
     this->UserId = UserId;
+    this->pwd = pwd;
     socket = s;
     ui->userIdLabel->setText(this->UserId);
     connect(socket,&TcpSocketClient::connected,this,&MainChat::Connected);
@@ -31,12 +32,45 @@ void MainChat::Connected()
     pa.setColor(QPalette::WindowText,Qt::green);
     ui->statusLabel->setText("在线");
     ui->statusLabel->setPalette(pa);
+    //重新验证登入
+    QString userId = this->UserId;
+    QString pwd = this->pwd;
+    MyProtoMsg msg1;
+    //------放入消息
+    msg1.head.server = CMD_LOGIN;
+    qDebug()<<userId;
+    msg1.body["userId"] = Json::Value(userId.toStdString().c_str()) ;
+    msg1.body["pwd"] = Json::Value(pwd.toStdString().c_str());
+    if(!socket->b_isConnectState) {
+        QMessageBox::warning(this,"登入提示","当前网络未连接");
+        return;
+    }else{
+        socket->onSendData(msg1);
+    }
 }
 
 void MainChat::hasMsgDeal(MyProtoMsg* header)
 {
     qDebug()<<"MainChat:header->server = "<<header->head.server;
     switch (header->head.server) {
+        case CMD_LOGIN_RESULT:{
+            if(header->body["result"]==-1){
+                QMessageBox::warning(this,"登入提示",QString::fromLocal8Bit(header->body["data"].asCString()));
+                return;
+            }else if(header->body["result"]==0){
+                QMessageBox::warning(this,"登入提示",QString::fromLocal8Bit(header->body["data"].asCString()));
+                return;
+            }else if(header->body["result"]==1){
+                //清楚所有好友item
+                for(int i=0;i<ui->listWidget1->count();){
+                    QListWidgetItem * item = ui->listWidget1->item(i);
+                    ui->listWidget1->removeItemWidget(item);
+                    delete item;
+                }
+                //初始化好友item
+                initFriend();
+            }
+        }break;
         case CMD_FRIEND_MAKE_RESULT:{
             QMessageBox::information(this,"提示",QString::fromLocal8Bit(header->body["data"].asCString()));
         }break;
