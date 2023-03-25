@@ -23,10 +23,10 @@ bool MysqlConn::connect(string user, string passwd, string dbName, string ip, un
 bool MysqlConn::update(string sql)
 {
 	if (mysql_query(m_conn, sql.c_str())) {
-		printf("SQL:  %s\nSUCCESS\n", sql.c_str());
+		printf("SQL:  %s\nSQL_RESULT:  ERROR\n", sql.c_str());
 		return false;
 	}
-	printf("SQL:  %s\nERROR\n", sql.c_str());
+	printf("SQL:  %s\nSQL_RESULT:  SUCCESS\n", sql.c_str());
 	return true;
 }
 
@@ -35,11 +35,11 @@ bool MysqlConn::query(string sql)
 	freeResult();
 
 	if (mysql_query(m_conn, sql.c_str())) {
-		printf("SQL:  %s\nERROR\n", sql.c_str());
+		printf("SQL:  %s\nSQL_RESULT:  ERROR\n", sql.c_str());
 		return false;
 	}
 	m_result = mysql_store_result(m_conn);
-	printf("SQL:  %s\nSUCCESS\n", sql.c_str());
+	printf("SQL:  %s\nSQL_RESULT:  SUCCESS\n", sql.c_str());
 	return true;
 }
 

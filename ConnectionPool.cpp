@@ -62,16 +62,17 @@ bool ConnectionPool::parseJsonFile()
     rd.parse(ifs, root);
     
     if (root.isObject()) {
-        
-        m_ip = root["ip"].asString();
-        m_port = root["port"].asInt();
-        m_user = root["userName"].asString();
-        m_passwd = root["password"].asString();
-        m_dbName = root["dbName"].asString();
-        m_minSize = root["minSize"].asInt();
-        m_maxSize = root["maxSize"].asInt();
-        m_maxIdleTime = root["maxIdleTime"].asInt();
-        m_timeout = root["timeout"].asInt();
+        Value sys = root["Windows"];
+        cout << sys << endl;
+        m_ip = sys["ip"].asString();
+        m_port = sys["port"].asInt();
+        m_user = sys["userName"].asString();
+        m_passwd = sys["password"].asString();
+        m_dbName = sys["dbName"].asString();
+        m_minSize = sys["minSize"].asInt();
+        m_maxSize = sys["maxSize"].asInt();
+        m_maxIdleTime = sys["maxIdleTime"].asInt();
+        m_timeout = sys["timeout"].asInt();
         return true;
         
     }

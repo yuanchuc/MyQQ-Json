@@ -182,6 +182,7 @@
     <ClInclude Include="CELLTimestamp.hpp" />
     <ClInclude Include="ConnectionPool.h" />
     <ClInclude Include="EasyTcpServer.hpp" />
+    <ClInclude Include="IDGenerater.hpp" />
     <ClInclude Include="json\json.h" />
     <ClInclude Include="memory.h" />
     <ClInclude Include="myproto.h" />
