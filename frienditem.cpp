@@ -1,18 +1,17 @@
 #include "frienditem.h"
 #include "ui_frienditem.h"
 
-friendItem::friendItem(TcpSocketClient* s,QString selfId,QString userId,QString result,QWidget *parent) :
+friendItem::friendItem(TcpSocketClient* s,Info* psInfo,Info*fdInfo,QWidget *parent) :
     QWidget(parent),
     ui(new Ui::friendItem)
 {
     ui->setupUi(this);
     setAttribute(Qt::WA_DeleteOnClose);
     this->socket = s;
-    this->userId = userId;
-    this->result = result;
-    this->selfId = selfId;
-    setFriendId(userId);
-    setStatus(result);
+    this->fdInfo = fdInfo;
+    this->psInfo = psInfo;
+    setFriendId(fdInfo->getUserId());
+    setStatus(fdInfo->getStatus());
     //服务器断开连接时
     connect(socket,&TcpSocketClient::disConnect,this,&friendItem::onDisConnect);
     connect(socket,&TcpSocketClient::hasMsg,this,&friendItem::hasMsgDeal);
@@ -29,12 +28,12 @@ void friendItem::setFriendId(QString Id)
     ui->userIdLable->setText(Id);
 }
 
-void friendItem::setStatus(QString result)
+void friendItem::setStatus(QString status)
 {
     QPalette pa;
+    fdInfo->setStatus(status);
 
-
-    if(result=="1"){
+    if(status=="1"){
         pa.setBrush(QPalette::Text,Qt::green);
         ui->statusLabel->setText("在线");
     }else{
@@ -46,7 +45,7 @@ void friendItem::setStatus(QString result)
 
 QString friendItem::getFriendId()
 {
-    return this->userId;
+    return fdInfo->getUserId();
 }
 
 void friendItem::mouseDoubleClickEvent(QMouseEvent *e)

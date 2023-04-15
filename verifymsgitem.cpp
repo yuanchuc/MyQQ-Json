@@ -1,12 +1,12 @@
 #include "verifymsgitem.h"
 #include "ui_verifymsgitem.h"
 
-VerifyMsgItem::VerifyMsgItem(TcpSocketClient* s,QString UserId,QString friendId, QString extraMsg, QString insertDate, QString status,QWidget *parent) :
+VerifyMsgItem::VerifyMsgItem(TcpSocketClient* s,Info*psInfo,QString friendId, QString extraMsg, QString insertDate, QString status,QWidget *parent) :
     QWidget(parent),
     ui(new Ui::VerifyMsgItem)
 {
     ui->setupUi(this);
-    this->UserId = UserId;
+    this->psInfo = psInfo;
     this->friendId = friendId;
     this->socket = s;
     ui->friendIdLabel->setText(friendId);
@@ -40,7 +40,7 @@ void VerifyMsgItem::on_agreeButton_clicked()
     MyProtoMsg msg;
     msg.head.server = CMD_FRIEND_MAKE_SURE_RESULT;
     msg.body["result"] = Json::Value(1);
-    msg.body["selfUserId"] = Json::Value(this->UserId.toStdString().c_str());
+    msg.body["selfUserId"] = Json::Value(this->psInfo->getCharUserId());
     msg.body["friendUserId"] = Json::Value(this->friendId.toUtf8().data());
     if(socket->b_isConnectState){
         socket->onSendData(msg);
@@ -57,7 +57,7 @@ void VerifyMsgItem::on_refuseButton_clicked()
     MyProtoMsg msg;
     msg.head.server = CMD_FRIEND_MAKE_SURE_RESULT;
     msg.body["result"] = Json::Value(-1);
-    msg.body["selfUserId"] = Json::Value(this->UserId.toStdString().c_str());
+    msg.body["selfUserId"] = Json::Value(this->psInfo->getCharUserId());
     msg.body["friendUserId"] = Json::Value(this->friendId.toUtf8().data());
     if(socket->b_isConnectState){
         socket->onSendData(msg);

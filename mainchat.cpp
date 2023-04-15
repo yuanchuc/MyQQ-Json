@@ -1,7 +1,7 @@
 #include "mainchat.h"
 #include "ui_mainchat.h"
 
-MainChat::MainChat(QString UserId,QString pwd,TcpSocketClient* s,QWidget *parent) :
+MainChat::MainChat(Info*psInfo,TcpSocketClient* s,QWidget *parent) :
     QWidget(parent),
     ui(new Ui::MainChat)
 {
@@ -11,10 +11,10 @@ MainChat::MainChat(QString UserId,QString pwd,TcpSocketClient* s,QWidget *parent
 
     //初始化成员
     VM = nullptr;
-    this->UserId = UserId;
-    this->pwd = pwd;
+    this->psInfo = psInfo;
     socket = s;
-    ui->userIdLabel->setText(this->UserId);
+    ui->userIdLabel->setText(psInfo->getUserId());
+    ui->userNameLabel->setText(psInfo->getUserName());
     connect(socket,&TcpSocketClient::connected,this,&MainChat::Connected);
     connect(socket,&TcpSocketClient::disConnect,this,&MainChat::onDisConnect);
     connect(socket,&TcpSocketClient::hasMsg,this,&MainChat::hasMsgDeal);
@@ -26,6 +26,15 @@ MainChat::~MainChat()
     delete ui;
 }
 
+QString MainChat::GetMd5(const QString &value)
+{
+    QString md5;
+    QByteArray bb;//相当于是QChar的一个vector<>
+    bb = QCryptographicHash::hash(value.toUtf8(), QCryptographicHash::Md5);
+    md5.append(bb.toHex());
+    return md5;
+}
+
 void MainChat::Connected()
 {
     QPalette pa;
@@ -33,8 +42,8 @@ void MainChat::Connected()
     ui->statusLabel->setText("在线");
     ui->statusLabel->setPalette(pa);
     //重新验证登入
-    QString userId = this->UserId;
-    QString pwd = this->pwd;
+    QString userId = psInfo->getUserId();
+    QString pwd = psInfo->GetMd5Pwd();
     MyProtoMsg msg1;
     //------放入消息
     msg1.head.server = CMD_LOGIN;
@@ -82,7 +91,7 @@ void MainChat::hasMsgDeal(MyProtoMsg* header)
                 MyProtoMsg msg;
                 msg.head.server = CMD_FRIEND_MAKE_SURE_RESULT;
                 msg.body["result"] = Json::Value(1);
-                msg.body["selfUserId"] = Json::Value(this->UserId.toStdString().c_str());
+                msg.body["selfUserId"] = Json::Value(psInfo->getUserId().toStdString().c_str());
                 msg.body["friendUserId"] = Json::Value(header->body["friendUserId"]);
                 socket->onSendData(msg);
              }
@@ -91,8 +100,21 @@ void MainChat::hasMsgDeal(MyProtoMsg* header)
             qDebug()<<"clear"<<endl;
             ui->listWidget1->clear();
             qDebug()<<"clear"<<endl;
+            Info* fdInfo;
             for(auto info : header->body["friendInfo"]){
-                addNewItem(QString(info["friendUserId"].asCString()),QString(info["status"].asCString()));
+                QString friendUserId = QString(info["friendUserId"].asCString());
+                QString cur_socket = QString(info["cur_socket"].asCString());
+                QString recordId = QString(info["recordId"].asCString());
+                QString userName = QString(info["userName"].asCString());
+                QString status = QString(info["status"].asCString());
+                QString phone = QString(info["phone"].asCString());
+                fdInfo = new Info(friendUserId,userName);
+                fdInfo->setPhone(phone);
+                fdInfo->setStatus(status);
+                fdInfo->setRecordId(recordId);
+                fdInfo->setCurSock(cur_socket);
+
+                addNewItem(fdInfo);
             }
         }break;
         case CMD_DEL_FRIEND_RESULT:{
@@ -103,7 +125,21 @@ void MainChat::hasMsgDeal(MyProtoMsg* header)
         }break;
         case CMD_FRIEND_ADD:{
             if(header->body["result"].asInt() == 1){
-                addNewItem(QString::fromLocal8Bit(header->body["friendUserId"].asCString()),QString(header->body["status"].asCString()));
+                Json::Value info = header->body;
+                Info* fdInfo;
+                QString friendUserId = QString(info["friendUserId"].asCString());
+                QString cur_socket = QString(info["cur_socket"].asCString());
+                QString recordId = QString(info["recordId"].asCString());
+                QString userName = QString(info["userName"].asCString());
+                QString status = QString(info["status"].asCString());
+                QString phone = QString(info["phone"].asCString());
+                fdInfo = new Info(friendUserId,userName);
+                fdInfo->setPhone(phone);
+                fdInfo->setStatus(status);
+                fdInfo->setRecordId(recordId);
+                fdInfo->setCurSock(cur_socket);
+
+                addNewItem(fdInfo);
             }
 
         }break;
@@ -132,7 +168,7 @@ void MainChat::initFriend()
     cout<<"initFriend"<<endl;
      MyProtoMsg msg;
      msg.head.server = CMD_GET_FRIEND;
-     msg.body["selfUserId"] = this->UserId.toStdString().c_str();
+     msg.body["selfUserId"] = psInfo->getUserId().toStdString().c_str();
     if(socket->b_isConnectState){
         socket->onSendData(msg);
     }
@@ -171,9 +207,9 @@ void MainChat::moveItemFriend(const char* friendId)
     }
 }
 
-void MainChat::addNewItem(QString friendId, QString status)
+void MainChat::addNewItem(Info*fdInfo)
 {
-    friendItem* widget = new friendItem(socket,this->UserId,friendId,status,this);
+    friendItem* widget = new friendItem(socket,psInfo,fdInfo,this);
     QListWidgetItem* item = new QListWidgetItem;
     item->setSizeHint(QSize(24, 36));
     ui->listWidget1->addItem(item);
@@ -199,7 +235,7 @@ void MainChat::onActionDelete()
                 MyProtoMsg msg;
                 msg.head.server = CMD_DEL_FRIEND;
                 msg.body["friendUserId"] = Json::Value(friendUserId.toStdString().c_str());
-                msg.body["selfUserId"] = Json::Value(this->UserId.toStdString().c_str());
+                msg.body["selfUserId"] = Json::Value(psInfo->getUserId().toStdString().c_str());
                 if(socket->b_isConnectState){
                     socket->onSendData(msg);
                     ui->listWidget1->removeItemWidget(var);
@@ -221,10 +257,10 @@ void MainChat::onCustomContextMenuRequested(const QPoint &pos)
 
 void MainChat::on_insertFriendButton_clicked()
 {
-    FriendMaking * FM = new FriendMaking(UserId,socket);
-    connect(FM,&FriendMaking::addNewFriend,[this](QString friendId,QString status){
-        addNewItem(friendId,status);
-    });
+    FriendMaking * FM = new FriendMaking(psInfo,socket);
+//    connect(FM,&FriendMaking::addNewFriend,[this](QString friendId,QString status){
+//        addNewItem(friendId,status);
+//    });
     //设置父窗口不能操作
     FM->setWindowModality(Qt::ApplicationModal);
     FM->show();
@@ -233,12 +269,12 @@ void MainChat::on_insertFriendButton_clicked()
 void MainChat::on_verifyMsgButton_clicked()
 {
     if(!VM){
-        VM = new VerifyMsg(socket,UserId);
+        VM = new VerifyMsg(socket,psInfo);
         VM->show();
     }else{
         VM->close();
         delete VM;
-        VM = new VerifyMsg(socket,UserId);
+        VM = new VerifyMsg(socket,psInfo);
         VM->show();
     }
 

@@ -8,10 +8,12 @@
 #include<QMenu>
 
 #include <QToolBar>
+#include<QCryptographicHash>
 #include"tcpsocketclient.h"
 #include"friendmaking.h"
 #include"frienditem.h"
 #include"verifymsg.h"
+#include"storageclass.hpp"
 namespace Ui {
 class MainChat;
 }
@@ -21,8 +23,9 @@ class MainChat : public QWidget
     Q_OBJECT
 
 public:
-    explicit MainChat(QString UserId,QString pwd,TcpSocketClient* s,QWidget *parent = nullptr);
+    explicit MainChat(Info*psInfo,TcpSocketClient* s,QWidget *parent = nullptr);
     ~MainChat();
+    QString GetMd5(const QString &value);
 private slots:
     void Connected();
     void hasMsgDeal(MyProtoMsg* header);
@@ -34,14 +37,13 @@ private slots:
 private:
     Ui::MainChat *ui;
     TcpSocketClient* socket;
-    QString UserId;
-    QString pwd;
+    Info* psInfo;
 private:
     void setTabWidget();//初始化TabWidget
     void initFriend();  //初始化好友
     void initEvent();   //初始化右键菜单事件
     void moveItemFriend(const char* friendId);          //删除对应的好友Item
-    void addNewItem(QString friendId,QString status);   //添加对应的好友Item
+    void addNewItem(Info * fdInfo);   //添加对应的好友Item
     void onActionDelete();  //菜单删除操作
 private:
     QMenu *popMenu_In_ListWidget_;/*弹出菜单*/

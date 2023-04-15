@@ -17,7 +17,7 @@
    <property name="geometry">
     <rect>
      <x>150</x>
-     <y>30</y>
+     <y>10</y>
      <width>111</width>
      <height>31</height>
     </rect>
@@ -26,11 +26,11 @@
     <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:16pt;&quot;&gt;注册账号&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
    </property>
   </widget>
-  <widget class="QLineEdit" name="userIdEdit">
+  <widget class="QLineEdit" name="nameEdit">
    <property name="geometry">
     <rect>
      <x>150</x>
-     <y>90</y>
+     <y>66</y>
      <width>131</width>
      <height>31</height>
     </rect>
@@ -39,8 +39,8 @@
   <widget class="QLineEdit" name="pwdEdit">
    <property name="geometry">
     <rect>
-     <x>150</x>
-     <y>140</y>
+     <x>151</x>
+     <y>156</y>
      <width>131</width>
      <height>31</height>
     </rect>
@@ -53,20 +53,20 @@
    <property name="geometry">
     <rect>
      <x>110</x>
-     <y>94</y>
+     <y>70</y>
      <width>31</width>
      <height>21</height>
     </rect>
    </property>
    <property name="text">
-    <string>账号</string>
+    <string>昵称</string>
    </property>
   </widget>
   <widget class="QLabel" name="label_3">
    <property name="geometry">
     <rect>
-     <x>109</x>
-     <y>144</y>
+     <x>110</x>
+     <y>160</y>
      <width>31</width>
      <height>21</height>
     </rect>
@@ -112,6 +112,29 @@
    </property>
    <property name="text">
     <string>确认注册</string>
+   </property>
+  </widget>
+  <widget class="QLineEdit" name="phoneEdit">
+   <property name="geometry">
+    <rect>
+     <x>152</x>
+     <y>111</y>
+     <width>131</width>
+     <height>31</height>
+    </rect>
+   </property>
+  </widget>
+  <widget class="QLabel" name="label_5">
+   <property name="geometry">
+    <rect>
+     <x>92</x>
+     <y>116</y>
+     <width>51</width>
+     <height>20</height>
+    </rect>
+   </property>
+   <property name="text">
+    <string>手机号</string>
    </property>
   </widget>
  </widget>

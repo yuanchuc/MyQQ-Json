@@ -17,19 +17,19 @@
 #include<QMovie>
 #include <QMouseEvent>
 #include<QToolButton>
+#include <QJsonDocument>
+#include<QCryptographicHash>
+#include <QJsonParseError>
+#include <QJsonObject>
+#include <QJsonValue>
+#include <QJsonArray>
+
 #include"mainchat.h"
 #include"logonview.h"
 #include"tcpsocketclient.h"
 #include"myproto.h"
-#include <QJsonDocument>
+#include"storageclass.hpp"
 
-#include <QJsonParseError>
-
-#include <QJsonObject>
-
-#include <QJsonValue>
-
-#include <QJsonArray>
 
 //用于转化IP地址
 #include <QHostAddress>
@@ -45,7 +45,7 @@ class LoginView : public QMainWindow
 public:
     explicit LoginView(QWidget *parent = nullptr);
     ~LoginView();
-
+    QString GetMd5(const QString &value);
 private slots:
     void on_loginButton_clicked();  //登入按钮
     void on_logonButton_clicked();  //注册按钮
@@ -91,7 +91,7 @@ private:
     void loginViewMove();       //登入视图动画启动
     void mainViewOpen();        //主窗口出现动画
     void mainViewClose();       //主窗口关闭动画
-    void createNewFrame(); //创建登入后窗口
+    void createNewFrame(Info* io); //创建登入后窗口
 
 };
 

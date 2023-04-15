@@ -6,6 +6,7 @@
 #include<QMenu>
 #include"tcpsocketclient.h"
 #include"myproto.h"
+#include"storageclass.hpp"
 namespace Ui {
 class friendItem;
 }
@@ -14,10 +15,10 @@ class friendItem : public QWidget
 {
     Q_OBJECT
 public:
-    explicit friendItem(TcpSocketClient* s,QString selfId,QString userId,QString result,QWidget *parent = nullptr);
+    explicit friendItem(TcpSocketClient* s,Info* psInfo,Info*fdInfo,QWidget *parent = nullptr);
     ~friendItem();
     void setFriendId(QString Id);
-    void setStatus(QString result);
+    void setStatus(QString status);
     QString getFriendId();
     //virtual void mousePressEvent(QMouseEvent *event);
     void mouseDoubleClickEvent(QMouseEvent* e);
@@ -27,10 +28,8 @@ private slots:
 private:
     TcpSocketClient* socket;
     Ui::friendItem *ui;
-    QString userId;
-    QString result;
-    QString selfId;
-
+    Info* psInfo;
+    Info* fdInfo;
 private:
 
 };

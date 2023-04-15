@@ -4,6 +4,7 @@
 #include <QWidget>
 #include"tcpsocketclient.h"
 #include"verifymsgitem.h"
+#include"storageclass.hpp"
 namespace Ui {
 class VerifyMsg;
 }
@@ -13,7 +14,7 @@ class VerifyMsg : public QWidget
     Q_OBJECT
 
 public:
-    explicit VerifyMsg(TcpSocketClient* s,QString UserId,QWidget *parent = nullptr);
+    explicit VerifyMsg(TcpSocketClient* s,Info *psInfo,QWidget *parent = nullptr);
     ~VerifyMsg();
 public slots:
     void hasMsgDeal(MyProtoMsg* header);
@@ -24,8 +25,7 @@ private:
 
     Ui::VerifyMsg *ui;
     TcpSocketClient* socket;
-    QString UserId;
-
+    Info * psInfo;
 };
 
 #endif // VERIFYMSG_H

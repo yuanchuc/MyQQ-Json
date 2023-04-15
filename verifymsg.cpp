@@ -1,14 +1,14 @@
 #include "verifymsg.h"
 #include "ui_verifymsg.h"
 
-VerifyMsg::VerifyMsg(TcpSocketClient* s,QString UserId,QWidget *parent) :
+VerifyMsg::VerifyMsg(TcpSocketClient* s,Info *psInfo,QWidget *parent) :
     QWidget(parent),
     ui(new Ui::VerifyMsg)
 {
     ui->setupUi(this);
     //setAttribute(Qt::WA_DeleteOnClose);
     this->socket = s;
-    this->UserId = UserId;
+    this->psInfo = psInfo;
     connect(socket,&TcpSocketClient::hasMsg,this,&VerifyMsg::hasMsgDeal);
     initVerifyMsg();
 }
@@ -42,7 +42,7 @@ void VerifyMsg::hasMsgDeal(MyProtoMsg *header)
 
 void VerifyMsg::addNewItem(QString friendId, QString extraMsg, QString insertDate, QString status)
 {
-    VerifyMsgItem* widget = new VerifyMsgItem(socket,UserId,friendId,extraMsg,insertDate,status);
+    VerifyMsgItem* widget = new VerifyMsgItem(socket,psInfo,friendId,extraMsg,insertDate,status);
     QListWidgetItem* item = new QListWidgetItem;
     item->setSizeHint(QSize(50, 90));
     ui->listWidget->insertItem(0,item);
@@ -54,6 +54,6 @@ void VerifyMsg::initVerifyMsg()
 {
     MyProtoMsg msg;
     msg.head.server = CMD_GET_VERIFY_MSG;
-    msg.body["selfUserId"] = Json::Value(this->UserId.toLocal8Bit().data());
+    msg.body["selfUserId"] = Json::Value(this->psInfo->getCharUserId());
     socket->onSendData(msg);
 }

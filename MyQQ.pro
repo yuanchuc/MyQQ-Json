@@ -46,7 +46,8 @@ HEADERS += loginview.h \
     json/json.h \
     frienditem.h \
     verifymsg.h \
-    verifymsgitem.h
+    verifymsgitem.h \
+    storageclass.hpp
 
 FORMS += loginview.ui \
     mainchat.ui \

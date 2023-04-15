@@ -2,6 +2,7 @@
 #define VERIFYMSGITEM_H
 
 #include <QWidget>
+#include"storageclass.hpp"
 #include"tcpsocketclient.h"
 namespace Ui {
 class VerifyMsgItem;
@@ -12,7 +13,7 @@ class VerifyMsgItem : public QWidget
     Q_OBJECT
 
 public:
-    explicit VerifyMsgItem(TcpSocketClient* s,QString UserId,QString friendId, QString extraMsg, QString insertDate, QString status,QWidget *parent = nullptr);
+    explicit VerifyMsgItem(TcpSocketClient* s,Info*psInfo,QString friendId, QString extraMsg, QString insertDate, QString status,QWidget *parent = nullptr);
     ~VerifyMsgItem();
 
 private slots:
@@ -21,7 +22,7 @@ private slots:
     void on_refuseButton_clicked();
 private:
     Ui::VerifyMsgItem *ui;
-    QString UserId;
+    Info*psInfo;
     QString friendId;
     TcpSocketClient*socket;
 };

@@ -19,7 +19,7 @@ LoginView::LoginView(QWidget *parent) :
 
     //获取ip地址和端口号
     //IP = "8.130.74.114";
-    IP = "192.168.56.1";
+    IP = "127.0.0.1";
     port = "4567";
     //socket启动
     socket = new TcpSocketClient;
@@ -39,6 +39,15 @@ LoginView::~LoginView()
 {
     delete ui;
 }
+
+QString LoginView::GetMd5(const QString &value)
+{
+    QString md5;
+    QByteArray bb;//相当于是QChar的一个vector<>
+    bb = QCryptographicHash::hash(value.toUtf8(), QCryptographicHash::Md5);
+    md5.append(bb.toHex());
+    return md5;
+}
 void LoginView::on_loginButton_clicked()
 {
     loginViewMove();
@@ -52,7 +61,8 @@ void LoginView::on_loginButton_clicked()
         }
 
         QString userId = ui->loginIdInput->currentText();
-        QString pwd = ui->loginPwdInput->text();
+        //MD5加密比对
+        QString pwd =GetMd5(ui->loginPwdInput->text());
         MyProtoMsg msg1;
         //------放入消息
         msg1.head.server = CMD_LOGIN;
@@ -101,8 +111,11 @@ void LoginView::hasMsgDeal(MyProtoMsg* header)
                 loginViewReduce();
                 return;
             }else if(header->body["result"]==1){
+                Info* io =new Info(ui->loginIdInput->currentText(),header->body["userName"].asCString());
+                io->setPwd(ui->loginPwdInput->text());
+                io->setPhone(header->body["userPhone"].asCString());
                 writeQComBoxItem();
-                createNewFrame();
+                createNewFrame(io);
             }
         }break;
     }
@@ -191,7 +204,7 @@ void LoginView::connectDatabase()
 {
     //连接数据库
     this->db = QSqlDatabase::addDatabase("QSQLITE");
-    db.setDatabaseName("Dme.db");//设置一个数据库，创建一个数据库文件
+    db.setDatabaseName("QQ.db");//设置一个数据库，创建一个数据库文件
     //判断数据库是否打开成功
     bool ok;
     ok = db.open();
@@ -289,14 +302,15 @@ void LoginView::mainViewClose()
     m_pAnimationClose->start();
 }
 
-void LoginView::createNewFrame()
+void LoginView::createNewFrame(Info* io)
 {
-    MainChat* MC = new MainChat(ui->loginIdInput->currentText(),ui->loginPwdInput->text(),socket);
+
+    MainChat* MC = new MainChat(io,socket);
     QTimer::singleShot(500,this,[&](){
         this->hide();
     });
     mainViewClose();
-    disconnect(socket,&TcpSocketClient::hasMsg,this,&LoginView::hasMsgDeal);
+    //disconnect(socket,&TcpSocketClient::hasMsg,this,&LoginView::hasMsgDeal);
     MC->show();
 }
 
