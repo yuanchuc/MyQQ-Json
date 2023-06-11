@@ -62,7 +62,12 @@ public:
             break;
         case CMD_GET_VERIFY_MSG:GetVerifyMsg(pClient, header);
             break;
+        case CMD_SEND_FRIEND_MSG:SendFriendMsg(pClient, header);
+            break;
+        case CMD_GET_FRIEND_MSG:GetFriendMsg(pClient, header);
+            break;
         }
+        
     }
 private:
     void DataInit() {
@@ -126,6 +131,7 @@ private:
                     MyProtoMsg msgToFriend;
                     msgToFriend.head.server = CMD_FRIEND_LOGIN;
                     msgToFriend.body["friendId"] = Json::Value(header->body["userId"].asCString());
+                    msgToFriend.body["cur_socket"] = Json::Value((int)pClient->sockfd());
                     msgToFriend.body["userName"] = msg1.body["userPhone"];
                     SendToFriendForLogin(pClient, msgToFriend);
                 }
@@ -245,20 +251,20 @@ private:
             msgToFriend.head.server = CMD_FRIEND_ADD;
             msgToFriend.body["result"] = Json::Value(1);
             msgToFriend.body["data"] = Json::Value("Succeeded in adding a friend");
-            
+            long long recorldId = idGenerater->NextID();
             //同步好友状态
             string sql_2 = "insert into friendmaking values ('%s','%s',CURRENT_TIMESTAMP,'%lld');";
             char targetString2[1024];
             snprintf(targetString2, sizeof(targetString2), sql_2.c_str(),
                 header->body["selfUserId"].asCString(), header->body["friendUserId"].asCString(),
-                idGenerater->NextID());
+                recorldId);
             MySQL->update(targetString2);
             
             string sql_3 = "insert into friendmaking values ('%s','%s',CURRENT_TIMESTAMP,'%lld');";
             char targetString3[1024];
             snprintf(targetString3, sizeof(targetString3), sql_2.c_str(),
                 header->body["friendUserId"].asCString(), header->body["selfUserId"].asCString(),
-                idGenerater->NextID());
+                recorldId);
             MySQL->update(targetString3);
             //发送数据到客户端
             getSpFriendInfo(msgToFriend, header->body["friendUserId"].asCString(), header->body["selfUserId"].asCString());
@@ -358,15 +364,50 @@ private:
         }
         pClient->SendData(&msg);
     }
+    void SendFriendMsg(ClientSocket* pClient, MyProtoMsg* header) {
+        printf("OpMsg:  recvClient<Socket=%d>\nrequset:  <CMD_SEND_FRIEND_MSG>  ,dataLength:%d\n", (int)pClient->sockfd(), header->head.len);
+        const char* content = header->body["content"].asCString();
+        const char* userId = header->body["userId"].asCString();
+        const char* friendId = header->body["friendId"].asCString();
+
+        //数据存储
+        string recordId = getRecordId(userId, friendId);
+        insertMsg(userId,content,recordId.c_str());
+        //转发好友
+        MyProtoMsg msg;
+        msg.head.server = CMD_RECV_FRIEND_MSG;
+        if (content) {
+            return;
+        }
+        msg.body["content"] = Json::Value(content);
+        msg.body["friendUserId"] = Json::Value(friendId);
+        msg.body["userId"] = Json::Value(userId);
+        SendToFriendForUpdate(pClient,header,msg);
+
+    }
+    void GetFriendMsg(ClientSocket* pClient, MyProtoMsg* header) {
+        printf("OpMsg:  recvClient<Socket=%d>\nrequset:  <CMD_GET_FRIEND_MSG>  ,dataLength:%d\n", (int)pClient->sockfd(), header->head.len);
+        const char* userId = header->body["userId"].asCString();
+        const char* friendId = header->body["friendId"].asCString();
+        string recordId = getRecordId(userId, friendId);
+        Json::Value root = getRecordMsgById(recordId.c_str());
+
+
+        //返回数据
+        MyProtoMsg msg;
+        msg.head.server = CMD_GET_FRIEND_MSG;
+        msg.body = root;
+        pClient->SendData(&msg);
+    }
 public:
 
     void SendToFriendForLogin(ClientSocket* pClient, MyProtoMsg& msgToFriend) {
         //通知好友上线
         shared_ptr<MysqlConn> MySQL = pool->getConnection();
-        string sql_3 = "select id,cur_socket,`status` from friendmaking JOIN logininfo on id = friendUserId WHERE selfUserId='%s' and status = 1;";
-        char targetString3[1024];
-        snprintf(targetString3, sizeof(targetString3), sql_3.c_str(),pClient->getUserID().c_str());
-        MySQL->query(targetString3);
+        string sql = "select id,cur_socket,`status` from friendmaking JOIN logininfo on id = friendUserId WHERE selfUserId='%s' and status = 1;";
+        char targetString[1024];
+        snprintf(targetString, sizeof(targetString), sql.c_str(),pClient->getUserID().c_str());
+        MySQL->query(targetString);
         while (MySQL->next()) {
             pClient->SendData(&msgToFriend, atoi(MySQL->value(1).c_str()));
         }
@@ -492,6 +533,39 @@ public:
             msgToFriend.body["status"] = Json::Value(MySQL->value(6).c_str());
             msgToFriend.body["phone"] = Json::Value(MySQL->value(7).c_str());
         }
+    }
+    string getRecordId(const char * userId,const char*friendId) {
+        shared_ptr<MysqlConn> MySQL = pool->getConnection();
+        string sql = "select recordId from friendmaking where selfUserId = '%s' and friendUserId = '%s';";
+        char targetString[1024];
+        snprintf(targetString, sizeof(targetString), sql.c_str(),userId,friendId);
+        MySQL->query(targetString);
+        while (MySQL->next()) {
+            return MySQL->value(0);
+        }
+    }
+    void insertMsg(const char* userId, const char* content, const char* recordId) {
+        shared_ptr<MysqlConn> MySQL = pool->getConnection();
+        string sql = "insert into msgrecord(userId,content,recordId) values('%s','%s','%s');";
+        char targetString[1024];
+        snprintf(targetString, sizeof(targetString), sql.c_str(), userId, content,recordId);
+        MySQL->query(targetString);
+    }
+    Json::Value getRecordMsgById(const char * recordId) {
+        shared_ptr<MysqlConn> MySQL = pool->getConnection();
+        string sql = "select userId,content,date from msgrecord where recordId = '%s';";
+        char targetString[1024];
+        snprintf(targetString, sizeof(targetString), sql.c_str(),recordId);
+        MySQL->query(targetString);
+        Json::Value root;
+        while (MySQL->next()) {
+            Json::Value temp;
+            temp["userId"] = MySQL->value(0).c_str();
+            temp["content"] = MySQL->value(1).c_str();
+            temp["date"] = MySQL->value(2).c_str();
+            root.append(temp);
+        }
+        return root;
     }
 };
 
