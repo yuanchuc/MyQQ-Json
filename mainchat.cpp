@@ -100,20 +100,8 @@ void MainChat::hasMsgDeal(MyProtoMsg* header)
             qDebug()<<"clear"<<endl;
             ui->listWidget1->clear();
             qDebug()<<"clear"<<endl;
-            Info* fdInfo;
             for(auto info : header->body["friendInfo"]){
-                QString friendUserId = QString(info["friendUserId"].asCString());
-                QString cur_socket = QString(info["cur_socket"].asCString());
-                QString recordId = QString(info["recordId"].asCString());
-                QString userName = QString(info["userName"].asCString());
-                QString status = QString(info["status"].asCString());
-                QString phone = QString(info["phone"].asCString());
-                fdInfo = new Info(friendUserId,userName);
-                fdInfo->setPhone(phone);
-                fdInfo->setStatus(status);
-                fdInfo->setRecordId(recordId);
-                fdInfo->setCurSock(cur_socket);
-
+                Info * fdInfo = setPersonInfo(info);
                 addNewItem(fdInfo);
             }
         }break;
@@ -126,18 +114,7 @@ void MainChat::hasMsgDeal(MyProtoMsg* header)
         case CMD_FRIEND_ADD:{
             if(header->body["result"].asInt() == 1){
                 Json::Value info = header->body;
-                Info* fdInfo;
-                QString friendUserId = QString(info["friendUserId"].asCString());
-                QString cur_socket = QString(info["cur_socket"].asCString());
-                QString recordId = QString(info["recordId"].asCString());
-                QString userName = QString(info["userName"].asCString());
-                QString status = QString(info["status"].asCString());
-                QString phone = QString(info["phone"].asCString());
-                fdInfo = new Info(friendUserId,userName);
-                fdInfo->setPhone(phone);
-                fdInfo->setStatus(status);
-                fdInfo->setRecordId(recordId);
-                fdInfo->setCurSock(cur_socket);
+                Info * fdInfo = setPersonInfo(info);
 
                 addNewItem(fdInfo);
             }
@@ -246,6 +223,23 @@ void MainChat::onActionDelete()
 
          }
     }
+}
+
+Info *MainChat::setPersonInfo(Json::Value info)
+{
+    Info* fdInfo;
+    QString friendUserId = QString(info["friendUserId"].asCString());
+    QString cur_socket = QString(info["cur_socket"].asCString());
+    QString recordId = QString(info["recordId"].asCString());
+    QString userName = QString(info["userName"].asCString());
+    QString status = QString(info["status"].asCString());
+    QString phone = QString(info["phone"].asCString());
+    fdInfo = new Info(friendUserId,userName);
+    fdInfo->setPhone(phone);
+    fdInfo->setStatus(status);
+    fdInfo->setRecordId(recordId);
+    fdInfo->setCurSock(cur_socket);
+    return fdInfo;
 }
 
 //事件处理函数

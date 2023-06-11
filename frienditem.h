@@ -6,6 +6,7 @@
 #include<QMenu>
 #include"tcpsocketclient.h"
 #include"myproto.h"
+#include"chatting.h"
 #include"storageclass.hpp"
 namespace Ui {
 class friendItem;

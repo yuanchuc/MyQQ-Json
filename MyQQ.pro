@@ -35,7 +35,9 @@ SOURCES +=\
     jsoncpp.cpp \
     frienditem.cpp \
     verifymsg.cpp \
-    verifymsgitem.cpp
+    verifymsgitem.cpp \
+    chatting.cpp \
+    content.cpp
 
 HEADERS += loginview.h \
     mainchat.h \
@@ -47,7 +49,9 @@ HEADERS += loginview.h \
     frienditem.h \
     verifymsg.h \
     verifymsgitem.h \
-    storageclass.hpp
+    storageclass.hpp \
+    chatting.h \
+    content.h
 
 FORMS += loginview.ui \
     mainchat.ui \
@@ -55,7 +59,9 @@ FORMS += loginview.ui \
     friendmaking.ui \
     frienditem.ui \
     verifymsg.ui \
-    verifymsgitem.ui
+    verifymsgitem.ui \
+    chatting.ui \
+    content.ui
 
 # Default rules for deployment.
 qnx: target.path = /tmp/$${TARGET}/bin

@@ -45,6 +45,7 @@ private:
     void moveItemFriend(const char* friendId);          //删除对应的好友Item
     void addNewItem(Info * fdInfo);   //添加对应的好友Item
     void onActionDelete();  //菜单删除操作
+    Info* setPersonInfo(Json::Value info);
 private:
     QMenu *popMenu_In_ListWidget_;/*弹出菜单*/
     QAction *action_Delete_In_ListWidget_;/*菜单上的Action*/

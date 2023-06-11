@@ -50,7 +50,8 @@ QString friendItem::getFriendId()
 
 void friendItem::mouseDoubleClickEvent(QMouseEvent *e)
 {
-
+    Chatting* chatView = new Chatting(this->socket,this->psInfo,this->fdInfo);
+    chatView->show();
 }
 
 void friendItem::hasMsgDeal(MyProtoMsg *header)
@@ -59,6 +60,7 @@ void friendItem::hasMsgDeal(MyProtoMsg *header)
         case CMD_FRIEND_LOGIN:{
             if(header->body["friendId"].asCString()==ui->userIdLable->text()){
                 setStatus("1");
+                psInfo->setCurSock(header->body["cur_socket"].asCString());
                 break;
             }
         }break;
@@ -66,6 +68,7 @@ void friendItem::hasMsgDeal(MyProtoMsg *header)
         case CMD_FRIEND_LOGOUT:{
             if(header->body["friendId"].asCString()==ui->userIdLable->text()){
                 setStatus("0");
+                psInfo->setCurSock(nullptr);
                 break;
             }
         }break;
