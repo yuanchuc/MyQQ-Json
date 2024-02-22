@@ -4,13 +4,14 @@
 #include"IDGenerater.hpp"
 #include<thread>
 #include<ctime>
+#include<signal.h>
 bool g_bRun = true;
 
 class MyServer:public EasyTcpServer
 {
     //MyDatabase MySQL;
-    ConnectionPool* pool = ConnectionPool::getConnectPool();                //Êý¾Ý¿â³Ø
-    NonLockIDGenerater*idGenerater = NonLockIDGenerater::GetInstance();    //¶ÀÁ¢IDÉú²ú(»ùÓÚÑ©»¨Ëã·¨)
+    ConnectionPool* pool = ConnectionPool::getConnectPool();                //ï¿½ï¿½ï¿½Ý¿ï¿½ï¿½
+    NonLockIDGenerater*idGenerater = NonLockIDGenerater::GetInstance();    //ï¿½ï¿½ï¿½ï¿½IDï¿½ï¿½ï¿½ï¿½(ï¿½ï¿½ï¿½ï¿½Ñ©ï¿½ï¿½ï¿½ã·¨)
 public:
     MyServer() {
         shared_ptr<MysqlConn> MySQL = pool->getConnection();
@@ -18,22 +19,22 @@ public:
         MySQL->update(updt.c_str());
     }
     ~MyServer() {
-
+        delete pool;
     }
 public:
     virtual void OnNetJoin(ClientSocket* pClient) {
         _clientCount++;
         printf("Message:  client<%d> join\n", (int)pClient->sockfd());
     }
-    //ÓÃ»§ÍË³öÊ±³õÊ¼»¯Êý¾Ý
+    //ï¿½Ã»ï¿½ï¿½Ë³ï¿½Ê±ï¿½ï¿½Ê¼ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
     virtual void OnNetLeave(ClientSocket* pClient) {
         _clientCount--;
-        //Í¨ÖªºÃÓÑÒÑÏÂÏß
+        //Í¨Öªï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
         MyProtoMsg msgToFriend;
         msgToFriend.head.server = CMD_FRIEND_LOGOUT;
         msgToFriend.body["friendId"] = Json::Value(pClient->getUserID().c_str());
         SendToFriendForLogin(pClient, msgToFriend);
-        //³õÊ¼»¯Êý¾Ý
+        //ï¿½ï¿½Ê¼ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
         shared_ptr<MysqlConn> MySQL = pool->getConnection();
         string updt = "update logininfo set cur_socket = null,status = 0 where id = '%s';";
         char targetString[1024];
@@ -41,13 +42,13 @@ public:
         MySQL->update(targetString);
         printf("Message:  client<%d> leave\n", (int)pClient->sockfd());
     }
-    //´¦ÀíÐÅÏ¢
+    //ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ï¢
     virtual void OnNetMsg(ClientSocket* pClient, MyProtoMsg* header) {
         _msgCount++;
        
         switch (header->head.server)
         {
-        //µÇÈëÅÐ¶Ï
+        //ï¿½ï¿½ï¿½ï¿½ï¿½Ð¶ï¿½
         case CMD_LOGIN: LoginFun(pClient, header);
                       break;
         case CMD_LOGON: LogonFun(pClient, header);
@@ -76,31 +77,31 @@ private:
         updt.append("update logininfo set cur_socket = null,status = 0");
         MySQL->update(updt.c_str());
     }
-    //ÓÃ»§µÇÈëÊ±½øÐÐ´¦Àí
+    //ï¿½Ã»ï¿½ï¿½ï¿½ï¿½ï¿½Ê±ï¿½ï¿½ï¿½Ð´ï¿½ï¿½ï¿½
     void LoginFun(ClientSocket* pClient, MyProtoMsg* header) {
 
         printf("OpMsg:  recvClient<Socket=%d>\nrequset:  <CMD_LOGIN>  ,dataLength:%d\n", (int)pClient->sockfd(), header->head.len);
-        //ºöÂÔÅÐ¶ÏÓÃ»§ÃÜÂëÊÇ·ñÕýÈ·µÄ¹ý³Ì
+        //ï¿½ï¿½ï¿½ï¿½ï¿½Ð¶ï¿½ï¿½Ã»ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ç·ï¿½ï¿½ï¿½È·ï¿½Ä¹ï¿½ï¿½ï¿½
         shared_ptr<MysqlConn> MySQL = pool->getConnection();
         string sql_1 = "select * from logininfo where id = '%s';";
         char targetString1[1024];
         snprintf(targetString1, sizeof(targetString1), sql_1.c_str(),header->body["userId"].asCString());
         MySQL->query(targetString1);
-        //ÑéÖ¤ÃÜÂëµÄÕýÈ·ÐÔ
+        //ï¿½ï¿½Ö¤ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½È·ï¿½ï¿½
         bool pwd_flag = false;
         bool isLogin = false;
         bool isLogon = false;
-        //------·ÅÈëÏûÏ¢
+        //------ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ï¢
         MyProtoMsg msg1;
         msg1.head.server = CMD_LOGIN_RESULT;
         while (MySQL->next()) {
-            //Èç¹ûÒÑ¾­×¢²á£¬ÔòÅÐ¶ÏÃÜÂë
+            //ï¿½ï¿½ï¿½ï¿½Ñ¾ï¿½×¢ï¿½á£¬ï¿½ï¿½ï¿½Ð¶ï¿½ï¿½ï¿½ï¿½ï¿½
             isLogon = true;
             if (!strcmp(MySQL->value(2).c_str(), header->body["pwd"].asCString())) {
                 pwd_flag = true;
                 msg1.body["userName"] = Json::Value(MySQL->value(1).c_str());
                 msg1.body["userPhone"] = Json::Value(MySQL->value(5).c_str());
-                //Èç¹ûÒÑ¾­µÇÈë
+                //ï¿½ï¿½ï¿½ï¿½Ñ¾ï¿½ï¿½ï¿½ï¿½ï¿½
                 if (!strcmp(MySQL->value(4).c_str(), "1")) {
                     isLogin = true;
                 }
@@ -108,11 +109,11 @@ private:
             }
         }
        
-        //ÒÑ×¢²á
+        //ï¿½ï¿½×¢ï¿½ï¿½
         if (isLogon) {
-            //ÃÜÂëÕýÈ·
+            //ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½È·
             if (pwd_flag == true) {
-                //ÕËºÅÒÑ¾­µÇÈë
+                //ï¿½Ëºï¿½ï¿½Ñ¾ï¿½ï¿½ï¿½ï¿½ï¿½
                 if (isLogin) {
                     msg1.body["result"] = Json::Value(0);
                     msg1.body["data"] = Json::Value("Account has been logged in");
@@ -121,17 +122,17 @@ private:
                     msg1.body["result"] = Json::Value(1);
                     msg1.body["data"] = Json::Value("Login success");
                     
-                    //Êý¾Ý¿âÊý¾Ý¸üÐÂ
+                    //ï¿½ï¿½ï¿½Ý¿ï¿½ï¿½ï¿½ï¿½Ý¸ï¿½ï¿½ï¿½
                     string sql_2 = "update logininfo set cur_socket = %s ,status = 1 where id = '%s'";
                     char targetString2[1024];
                     snprintf(targetString2, sizeof(targetString2), sql_2.c_str(), std::to_string((int)pClient->sockfd()).c_str(), header->body["userId"].asCString());
                     MySQL->update(targetString2);
                     pClient->setUserId(header->body["userId"].asCString());
-                    //Í¨ÖªºÃÓÑÉÏÏß
+                    //Í¨Öªï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
                     MyProtoMsg msgToFriend;
                     msgToFriend.head.server = CMD_FRIEND_LOGIN;
                     msgToFriend.body["friendId"] = Json::Value(header->body["userId"].asCString());
-                    msgToFriend.body["cur_socket"] = Json::Value((int)pClient->sockfd());
+                    msgToFriend.body["cur_socket"] = Json::Value(to_string(pClient->sockfd()).c_str());
                     msgToFriend.body["userName"] = msg1.body["userPhone"];
                     SendToFriendForLogin(pClient, msgToFriend);
                 }
@@ -150,14 +151,14 @@ private:
     }
     void LogonFun(ClientSocket* pClient, MyProtoMsg* header) {
 
-        //ºöÂÔÅÐ¶ÏÓÃ»§ÃÜÂëÊÇ·ñÕýÈ·µÄ¹ý³Ì
+        //ï¿½ï¿½ï¿½ï¿½ï¿½Ð¶ï¿½ï¿½Ã»ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ç·ï¿½ï¿½ï¿½È·ï¿½Ä¹ï¿½ï¿½ï¿½
         printf("OpMsg:  recvClient<Socket=%d>\nrequset:  <CMD_LOGON>  ,dataLength:%d\n", (int)pClient->sockfd(), header->head.len);
         
         MyProtoMsg msg;
         msg.head.server = CMD_LOGON_RESULT;
         shared_ptr<MysqlConn> MySQL = pool->getConnection();
         if (isLogon(header->body["UserPhone"].asCString())) {
-            //ÕËºÅÒÑ¾­±»×¢²á
+            //ï¿½Ëºï¿½ï¿½Ñ¾ï¿½ï¿½ï¿½×¢ï¿½ï¿½
             msg.body["result"] = Json::Value(0);
             msg.body["data"] = Json::Value("The phone has been registered");
         }
@@ -169,12 +170,12 @@ private:
             char targetString[1024];
             snprintf(targetString, sizeof(targetString),updt.c_str(),userName.c_str(),userPwd.c_str(),userPhone.c_str());
             MySQL->update(targetString);
-            //»ñÈ¡·ÖÅäµÄId
-            char* Id[15];
+            //ï¿½ï¿½È¡ï¿½ï¿½ï¿½ï¿½ï¿½Id
+            string Id;
             getInfoByPhone(Id,userPhone.c_str());
             msg.body["result"] = Json::Value(1);
             msg.body["data"] = Json::Value("Account registration succeeded");
-            msg.body["userId"] = Json::Value(Id[0]);
+            msg.body["userId"] = Json::Value(Id.c_str());
         }
         pClient->SendData(&msg);
     }
@@ -182,31 +183,31 @@ private:
         printf("OpMsg:  recvClient<Socket=%d>\nrequset:  <CMD_FRIEND_MAKE>  ,dataLength:%d\n", (int)pClient->sockfd(), header->head.len);
         MyProtoMsg msg;
         msg.head.server = CMD_FRIEND_MAKE_RESULT;
-        //Èç¹û¸ÃÓÃ»§´æÔÚ
+        //ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ã»ï¿½ï¿½ï¿½ï¿½ï¿½
         shared_ptr<MysqlConn> MySQL = pool->getConnection();
         if (isExist(header->body["friendUserId"].asCString())) {
             msg.body["friendUserId"] = Json::Value(header->body["friendUserId"]);
             bool isfriend = isFriend(header->body["selfUserId"].asCString(), header->body["friendUserId"].asCString());
-            //Èç¹û²»ÊÇÅóÓÑ
+            //ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
             if (!isfriend) {
-                //ÏìÓ¦¸üÐÂ
+                //ï¿½ï¿½Ó¦ï¿½ï¿½ï¿½ï¿½
                 MyProtoMsg msgToFriend;
                 msgToFriend.head.server = CMD_FRIEND_MAKE_SURE;
-                //²éÑ¯µÇÈë×´Ì¬
+                //ï¿½ï¿½Ñ¯ï¿½ï¿½ï¿½ï¿½×´Ì¬
                 if (isLogin(header->body["friendUserId"].asCString())) {
                     msgToFriend.body["status"] = Json::Value("1");
                 }
                 else {
                     msgToFriend.body["status"] = Json::Value("0");
                 }
-                //´æ´¢ºÃÓÑÌí¼ÓÐÅÏ¢
+                //ï¿½æ´¢ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ï¢
                 string sql_4 = "insert into verifymsg value(null,'%s','%s',CURRENT_TIMESTAMP,'%s',0)";
                 char targetString4[1024];
                 snprintf(targetString4, sizeof(targetString4),sql_4.c_str(),
                     header->body["friendUserId"].asCString(), header->body["selfUserId"].asCString(), 
                     header->body["extraMsg"].asCString());
                 MySQL->update(targetString4);
-                //²¹³äÊý¾Ý
+                //ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
                 char* curTime = measureTime();
                 cout << curTime << endl;
                 msgToFriend.body["friendUserId"] = Json::Value(header->body["selfUserId"]);
@@ -217,14 +218,14 @@ private:
                 printf("insert successful\n");
             }
             else {
-                //Èç¹ûÊÇºÃÓÑ 
+                //ï¿½ï¿½ï¿½ï¿½Çºï¿½ï¿½ï¿½ 
                 msg.body["result"] = 0;
                 msg.body["data"] = Json::Value("You're already friends");
                 pClient->SendData(&msg);
             }
         }
         else {
-            //Èç¹û¸ÃÓÃ»§²»´æÔÚ
+            //ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ã»ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
             msg.body["result"] = 0;
             msg.body["data"] = Json::Value("The user does not exist");
             printf("ERROR,no exists\n");
@@ -234,10 +235,10 @@ private:
     }
     void FriendSure(ClientSocket* pClient, MyProtoMsg* header)   {
         printf("OpMsg:  recvClient<Socket=%d>\nrequset:  <CMD_FRIEND_MAKE_SURE_RESULT>  ,dataLength:%d\n", (int)pClient->sockfd(), header->head.len);
-        //Èç¹ûÍ¬ÒâÌí¼ÓºÃÓÑ
+        //ï¿½ï¿½ï¿½Í¬ï¿½ï¿½ï¿½ï¿½Óºï¿½ï¿½ï¿½
         shared_ptr<MysqlConn> MySQL = pool->getConnection();
         if (header->body["result"].asInt() == 1) {
-            //´¦ÀíÑéÖ¤ÏûÏ¢×´Ì¬
+            //ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ö¤ï¿½ï¿½Ï¢×´Ì¬
             string sql_1 = "update verifymsg set status = 1 where selfUserId = '%s' and friendUserId = '%s'and status = 0";
             char targetString1[1024];
             snprintf(targetString1, sizeof(targetString1), sql_1.c_str(), header->body["selfUserId"].asCString(), header->body["friendUserId"].asCString());
@@ -252,7 +253,7 @@ private:
             msgToFriend.body["result"] = Json::Value(1);
             msgToFriend.body["data"] = Json::Value("Succeeded in adding a friend");
             long long recorldId = idGenerater->NextID();
-            //Í¬²½ºÃÓÑ×´Ì¬
+            //Í¬ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½×´Ì¬
             string sql_2 = "insert into friendmaking values ('%s','%s',CURRENT_TIMESTAMP,'%lld');";
             char targetString2[1024];
             snprintf(targetString2, sizeof(targetString2), sql_2.c_str(),
@@ -266,10 +267,10 @@ private:
                 header->body["friendUserId"].asCString(), header->body["selfUserId"].asCString(),
                 recorldId);
             MySQL->update(targetString3);
-            //·¢ËÍÊý¾Ýµ½¿Í»§¶Ë
+            //ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ýµï¿½ï¿½Í»ï¿½ï¿½ï¿½
             getSpFriendInfo(msgToFriend, header->body["friendUserId"].asCString(), header->body["selfUserId"].asCString());
             SendToFriendForUpdate(pClient, header, msgToFriend);
-            //²éÑ¯ºÃÓÑµ±Ç°×´Ì¬
+            //ï¿½ï¿½Ñ¯ï¿½ï¿½ï¿½Ñµï¿½Ç°×´Ì¬
             MyProtoMsg msgToSelf;
             msgToSelf.head.server = CMD_FRIEND_ADD;
             getSpFriendInfo(msgToSelf, header->body["selfUserId"].asCString(),header->body["friendUserId"].asCString());
@@ -278,7 +279,7 @@ private:
             pClient->SendData(&msgToSelf);
         }
         else {
-            //´¦ÀíÑéÖ¤ÏûÏ¢×´Ì¬
+            //ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ö¤ï¿½ï¿½Ï¢×´Ì¬
             string sql_1 = "update verifymsg set status = -1 where selfUserId = '%s' and friendUserId = '%s'and status = 0";
             char targetString1[1024];
             snprintf(targetString1, sizeof(targetString1), sql_1.c_str(), header->body["selfUserId"].asCString(), header->body["friendUserId"].asCString());
@@ -309,7 +310,7 @@ private:
         pClient->SendData(&root);
     }
     void DelFriend(ClientSocket* pClient, MyProtoMsg* header) {
-        //´¦ÀíÉ¾³ýÊÂ¼þ
+        //ï¿½ï¿½ï¿½ï¿½É¾ï¿½ï¿½ï¿½Â¼ï¿½
         printf("OpMsg:  recvClient<Socket=%d>\nrequset:  <CMD_DEL_FRIEND>  ,dataLength:%d\n", (int)pClient->sockfd(), header->head.len);
         shared_ptr<MysqlConn> MySQL = pool->getConnection();
         string sql = "delete from friendmaking where (selfUserId = '%s' and friendUserId = '%s') or (selfUserId = '%s' and friendUserId = '%s');";
@@ -320,21 +321,21 @@ private:
             header->body["selfUserId"].asCString());
         bool ret = MySQL->update(targetString);
         if (ret) {
-            //·´À¡½á¹û
+            //ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
             MyProtoMsg msgToself;
             msgToself.head.server = CMD_DEL_FRIEND_RESULT;
             msgToself.body["result"] = Json::Value(1);
             msgToself.body["friendUserId"] = Json::Value(header->body["friendUserId"]);
             msgToself.body["data"] = Json::Value("Deleted successfully");
             pClient->SendData(&msgToself);
-            //Í¨ÖªºÃÓÑ±»É¾³ý
+            //Í¨Öªï¿½ï¿½ï¿½Ñ±ï¿½É¾ï¿½ï¿½
             MyProtoMsg msgToFriend;
             msgToFriend.head.server = CMD_FRIEND_REDUCE;
             msgToFriend.body["friendUserId"] = Json::Value(header->body["selfUserId"]);
             SendToFriendForUpdate(pClient, header, msgToFriend);
         }
         else {
-            //·´À¡½á¹û
+            //ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
             MyProtoMsg msgToself;
             msgToself.head.server = CMD_DEL_FRIEND_RESULT;
             msgToself.body["result"] = Json::Value(0);
@@ -368,32 +369,32 @@ private:
         printf("OpMsg:  recvClient<Socket=%d>\nrequset:  <CMD_SEND_FRIEND_MSG>  ,dataLength:%d\n", (int)pClient->sockfd(), header->head.len);
         const char* content = header->body["content"].asCString();
         const char* userId = header->body["userId"].asCString();
-        const char* friendId = header->body["friendId"].asCString();
+        const char* friendId = header->body["friendUserId"].asCString();
 
-        //Êý¾Ý´æ´¢
+        //ï¿½ï¿½ï¿½Ý´æ´¢
         string recordId = getRecordId(userId, friendId);
         insertMsg(userId,content,recordId.c_str());
-        //×ª·¢ºÃÓÑ
+        //×ªï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
         MyProtoMsg msg;
         msg.head.server = CMD_RECV_FRIEND_MSG;
-        if (content) {
+        if (!content) {
             return;
         }
         msg.body["content"] = Json::Value(content);
         msg.body["friendUserId"] = Json::Value(friendId);
         msg.body["userId"] = Json::Value(userId);
         SendToFriendForUpdate(pClient,header,msg);
-
+        pClient->SendData(&msg);
     }
     void GetFriendMsg(ClientSocket* pClient, MyProtoMsg* header) {
         printf("OpMsg:  recvClient<Socket=%d>\nrequset:  <CMD_GET_FRIEND_MSG>  ,dataLength:%d\n", (int)pClient->sockfd(), header->head.len);
         const char* userId = header->body["userId"].asCString();
-        const char* friendId = header->body["friendId"].asCString();
+        const char* friendId = header->body["friendUserId"].asCString();
         string recordId = getRecordId(userId, friendId);
         Json::Value root = getRecordMsgById(recordId.c_str());
 
 
-        //·µ»ØÊý¾Ý
+        //ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
         MyProtoMsg msg;
         msg.head.server = CMD_GET_FRIEND_MSG;
         msg.body = root;
@@ -402,7 +403,7 @@ private:
 public:
 
     void SendToFriendForLogin(ClientSocket* pClient, MyProtoMsg& msgToFriend) {
-        //Í¨ÖªºÃÓÑÉÏÏß
+        //Í¨Öªï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
         shared_ptr<MysqlConn> MySQL = pool->getConnection();
         string sql = "select id,cur_socket,`status` from friendmaking JOIN logininfo on id = friendUserId WHERE selfUserId='%s' and status = 1;";
         char targetString[1024];
@@ -413,7 +414,7 @@ public:
         }
     }
     void SendToFriendForUpdate(ClientSocket* pClient, MyProtoMsg* header,MyProtoMsg& msgToFriend) {
-        //Í¨ÖªÒÑÌí¼ÓµÄÔÚÏßºÃÓÑ
+        //Í¨Öªï¿½ï¿½ï¿½ï¿½Óµï¿½ï¿½ï¿½ï¿½ßºï¿½ï¿½ï¿½
         shared_ptr<MysqlConn> MySQL = pool->getConnection();
         string sql_1 = "select cur_socket from logininfo where id = '%s' and status = 1;";
         char targetString1[1024];
@@ -425,21 +426,20 @@ public:
     }
     char* measureTime() {
         time_t nowtime;
-        time(&nowtime); //»ñÈ¡1900Äê1ÔÂ1ÈÕ0µã0·Ö0Ãëµ½ÏÖÔÚ¾­¹ýµÄÃëÊý
+        time(&nowtime); //ï¿½ï¿½È¡1900ï¿½ï¿½1ï¿½ï¿½1ï¿½ï¿½0ï¿½ï¿½0ï¿½ï¿½0ï¿½ëµ½ï¿½ï¿½ï¿½Ú¾ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
         tm* p = localtime(&nowtime);
         string str = "%04d:%02d:%02d %02d:%02d:%02d";
         char* time = new char[1024];
-        snprintf(time, sizeof(time), str.c_str(), p->tm_year + 1900, p->tm_mon + 1, p->tm_mday, p->tm_hour, p->tm_min, p->tm_sec);
+        snprintf(time, 1024, str.c_str(), p->tm_year + 1900, p->tm_mon + 1, p->tm_mday, p->tm_hour, p->tm_min, p->tm_sec);
         return time;
     }
     bool isFriend(const char * selfUserId,const char* friendUserId) {
-        //Ë«ÏòÑéÖ¤ºÃÓÑÐÅÏ¢
+        //Ë«ï¿½ï¿½ï¿½ï¿½Ö¤ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ï¢
         bool isMakeFriend = false;
         shared_ptr<MysqlConn> MySQL = pool->getConnection();
-        string sql_2 = "select * from friendmaking where selfUserId = '%s';";
+        string sql_2 = "select * from friendmaking where selfUserId = '%s' and friendUserId = '%s';";
         char targetString2[1024];
         snprintf(targetString2, sizeof(targetString2), sql_2.c_str(),
-            selfUserId, friendUserId,
             selfUserId, friendUserId);
         MySQL->query(targetString2);
 
@@ -479,7 +479,7 @@ public:
         snprintf(targetString1, sizeof(targetString1), sql_1.c_str(), UserId);
         MySQL->query(targetString1);
         while (MySQL->next()) {
-            //Èç¹ûÒÑ¾­×¢²á
+            //ï¿½ï¿½ï¿½ï¿½Ñ¾ï¿½×¢ï¿½ï¿½
             return true;
         }
         return false;
@@ -501,21 +501,21 @@ public:
         }
         return info;
     }
-    char** getInfoByPhone(char** Info, const char* UserPhone) {
+    void getInfoByPhone(string& Id, const char* UserPhone) {
         shared_ptr<MysqlConn> MySQL = pool->getConnection();
         string sql_1 = "select * from logininfo where phone = '%s';";
         char targetString1[1024];
         snprintf(targetString1, sizeof(targetString1), sql_1.c_str(), UserPhone);
         MySQL->query(targetString1);
         while (MySQL->next()) {
-            strcpy(Info[0], MySQL->value(0).c_str());
+            Id = MySQL->value(0);
             //strcpy(Info[1], MySQL->value(1).c_str());
             //strcpy(Info[2], MySQL->value(2).c_str());
             //strcpy(Info[3], MySQL->value(3).c_str());
             //strcpy(Info[4], MySQL->value(4).c_str());
             //strcpy(Info[5], MySQL->value(5).c_str());
         }
-        return Info;
+
     }
     void getSpFriendInfo(MyProtoMsg& msgToFriend,const char* selfId,const char* fdId) {
         shared_ptr<MysqlConn> MySQL = pool->getConnection();
@@ -543,6 +543,7 @@ public:
         while (MySQL->next()) {
             return MySQL->value(0);
         }
+        return string("");
     }
     void insertMsg(const char* userId, const char* content, const char* recordId) {
         shared_ptr<MysqlConn> MySQL = pool->getConnection();
@@ -568,19 +569,25 @@ public:
         return root;
     }
 };
-
+MyServer server;
+void EXIT(int sig){
+    cout<<"æŽ¥æ”¶åˆ°é€€å‡ºä¿¡å·sig = "<<sig<<endl;
+    g_bRun = false;
+    server.Close();
+    exit(0);
+}
 int main() {
-        
-    MyServer server;
+    signal(SIGINT,EXIT);
+    signal(SIGTERM,EXIT);
     server.InitSocket();
     server.Bind(nullptr, 4567);
     server.Listen(15);
     server.Start(4);
     //std::thread t1(cmdThread);
-    //t1.detach();    //·ÖÀëÖ÷Ïß³Ì£¬·ÀÖ¹Ö÷Ïß³ÌÍË³öºó£¬×ÓÏß³ÌÈÔÎ´ÍË³öµ¼ÖÂÎÊÌâ
+    //t1.detach();    //ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ß³Ì£ï¿½ï¿½ï¿½Ö¹ï¿½ï¿½ï¿½ß³ï¿½ï¿½Ë³ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ß³ï¿½ï¿½ï¿½Î´ï¿½Ë³ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
     
     while (g_bRun) {
-        server.OnRun(); 
+        g_bRun = server.OnRun(); 
     }
     server.Close();
     printf("Message:  The task is completed. Procedure\n");

@@ -14,27 +14,27 @@ using namespace chrono;
 class MysqlConn
 {
 public:
-	//³õÊ¼»¯Êý¾Ý¿âÁ¬½Ó
+	//ï¿½ï¿½Ê¼ï¿½ï¿½ï¿½ï¿½ï¿½Ý¿ï¿½ï¿½ï¿½ï¿½ï¿½
 	MysqlConn();
-	//ÊÍ·ÅÊý¾Ý¿âÁ¬½Ó
+	//ï¿½Í·ï¿½ï¿½ï¿½ï¿½Ý¿ï¿½ï¿½ï¿½ï¿½ï¿½
 	~MysqlConn();
-	//Á¬½ÓÊý¾Ý¿â
+	//ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ý¿ï¿½
 	bool connect(string user, string passwd, string dbName, string ip, unsigned short port = 3306);
-	//¸üÐÂÊý¾Ý¿â
+	//ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ý¿ï¿½
 	bool update(string sql);
-	//²éÑ¯Êý¾Ý¿â
+	//ï¿½ï¿½Ñ¯ï¿½ï¿½ï¿½Ý¿ï¿½
 	bool query(string sql);
-	//±éÀú²éÑ¯µÃµ½µÄ½á¹û¼¯
+	//ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ñ¯ï¿½Ãµï¿½ï¿½Ä½ï¿½ï¿½ï¿½ï¿½
 	bool next();
-	//µÃµ½½á¹û¼¯ÖÐµÄ×Ö¶ÎÖµ
+	//ï¿½Ãµï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ðµï¿½ï¿½Ö¶ï¿½Öµ
 	string value(int index);
-	//ÊÂÎñ²Ù×÷
+	//ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
 	bool transaction();
-	//Ìá½»ÊÂÎñ
+	//ï¿½á½»ï¿½ï¿½ï¿½ï¿½
 	bool commit();
-	//ÊÂÎñ»Ø¹ö
+	//ï¿½ï¿½ï¿½ï¿½Ø¹ï¿½
 	bool roolback();
-	//Ë¢ÐÂÆðÊ¼µÄ¿ÕÏÐÊ±¼äµã
+	//Ë¢ï¿½ï¿½ï¿½ï¿½Ê¼ï¿½Ä¿ï¿½ï¿½ï¿½Ê±ï¿½ï¿½ï¿½
 	void refreshAliveTime();
 	long long getAliueveTime();
 private:

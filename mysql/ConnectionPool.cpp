@@ -39,13 +39,15 @@ ConnectionPool::~ConnectionPool()
 ConnectionPool::ConnectionPool()
 {
     printf("Procedure: The database thread pool is starting\n");
-    // ¼ÓÔØÅäÖÃÎÄ¼þ
+    // ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ä¼ï¿½
     if (!parseJsonFile()) {
         return;
     }
     
     for (int i = 0; i < m_minSize; ++i) {
+    	printf("%då·æ•°æ®è¿žæŽ¥ã€‚\n",i);
         addConnection();
+        
     }
     thread producer(&ConnectionPool::produceConnection, this);
     thread recycler(&ConnectionPool::recycleConnection,this);
@@ -62,7 +64,7 @@ bool ConnectionPool::parseJsonFile()
     rd.parse(ifs, root);
     
     if (root.isObject()) {
-        Value sys = root["Windows"];
+        Value sys = root["Linux"];
         cout << sys << endl;
         m_ip = sys["ip"].asString();
         m_port = sys["port"].asInt();
@@ -84,7 +86,7 @@ void ConnectionPool::produceConnection()
     while (true)
     {
         unique_lock<mutex> locker(m_mutexQ);
-        while (m_connectQ.size() >= m_minSize) {
+        while (m_connectQ.size() >= (size_t)m_minSize) {
 
             m_cond.wait(locker);
         }
@@ -99,7 +101,7 @@ void ConnectionPool::recycleConnection()
     {
         this_thread::sleep_for(chrono::milliseconds(500));
         lock_guard<mutex> locker(m_mutexQ);
-        while (m_connectQ.size() > m_minSize) {
+        while (m_connectQ.size() > (size_t)m_minSize) {
             MysqlConn* conn = m_connectQ.front();
             if (conn->getAliueveTime() >= m_maxIdleTime) {
                 m_connectQ.pop();
