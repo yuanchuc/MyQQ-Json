@@ -7,8 +7,7 @@ logonView::logonView(TcpSocketClient*s,QWidget *parent) :
 {
     ui->setupUi(this);
     this->socket = s;
-    //接收到消息时
-    connect(socket,&TcpSocketClient::hasMsg,this,&logonView::hasMsgDeal);
+
 }
 
 logonView::~logonView()
@@ -27,6 +26,8 @@ QString logonView::GetMd5(const QString &value)
 
 void logonView::on_pushButton_clicked()
 {
+    //接收到消息时
+    connect(socket,&TcpSocketClient::hasMsg,this,&logonView::hasMsgDeal,Qt::UniqueConnection);
     QString UserName=ui->nameEdit->text();
     QString phone = ui->phoneEdit->text();
     QString Pwd=ui->pwdEdit->text();
@@ -72,11 +73,12 @@ void logonView::hasMsgDeal(MyProtoMsg* header)
                 QString Id = QString::fromLocal8Bit(header->body["userId"].asCString());
                 QString tip = data+"\n"+"你的账号\n"+Id;
                 QMessageBox::information(this,"注册提示",tip);
-                return;
             }else if(header->body["result"].asInt() == 0){
                 QMessageBox::warning(this,"注册提示",QString::fromLocal8Bit(header->body["data"].asCString()));
                 this->close();
             }
         }
     }
+    //接收到消息时
+    disconnect(socket,&TcpSocketClient::hasMsg,this,&logonView::hasMsgDeal);
 }

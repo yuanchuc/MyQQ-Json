@@ -15,7 +15,7 @@ class Chatting : public QWidget
     Q_OBJECT
 
 public:
-    explicit Chatting(TcpSocketClient* s,Info* psInfo,Info*fdInfo,QWidget *parent = nullptr);
+    explicit Chatting(TcpSocketClient* s,Info* const psInfo,Info* const fdInfo,QWidget *parent = nullptr);
     ~Chatting();
 
 private slots:
@@ -32,8 +32,8 @@ private:
     void getMsg();
 private:
     TcpSocketClient* socket;
-    Info* psInfo;
-    Info* fdInfo;
+    Info* const psInfo;
+    Info* const fdInfo;
 };
 
 #endif // CHATTING_H

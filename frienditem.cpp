@@ -2,14 +2,11 @@
 #include "ui_frienditem.h"
 
 friendItem::friendItem(TcpSocketClient* s,Info* psInfo,Info*fdInfo,QWidget *parent) :
-    QWidget(parent),
-    ui(new Ui::friendItem)
+    QWidget(parent),socket(s),
+    ui(new Ui::friendItem),psInfo(psInfo),fdInfo(fdInfo)
 {
     ui->setupUi(this);
     setAttribute(Qt::WA_DeleteOnClose);
-    this->socket = s;
-    this->fdInfo = fdInfo;
-    this->psInfo = psInfo;
     setFriendId(fdInfo->getUserId());
     setStatus(fdInfo->getStatus());
     //服务器断开连接时

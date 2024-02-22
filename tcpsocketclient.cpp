@@ -93,7 +93,7 @@ void TcpSocketClient::onRecvData()
         {
             pMsg = myDecode.front();
             cout<<"server = "<<pMsg->head.server<<endl;
-            cout<<"body = "<<pMsg->body<<endl;
+            cout<<"Recv "<<pMsg->body<<endl;
             emit hasMsg(pMsg);
             myDecode.pop();
         }
@@ -109,7 +109,7 @@ void TcpSocketClient::onSendData(MyProtoMsg& msg1)
     uint8_t* pData = nullptr;
     MyProtoEncode myEncode;
 
-
+    cout<<"Send "<<msg1.body<<endl;
     pData = myEncode.encode(&msg1, len);
     qint64 iSendDataLength = m_TcpSocket->write((const char*)pData,len);
     if(!m_TcpSocket->flush() || iSendDataLength < 0)

@@ -1,17 +1,15 @@
 #include "chatting.h"
 #include "ui_chatting.h"
 
-Chatting::Chatting(TcpSocketClient* s,Info* psInfo,Info*fdInfo,QWidget *parent) :
+Chatting::Chatting(TcpSocketClient* s,Info* const psInfo,Info* const fdInfo,QWidget *parent) :
     QWidget(parent),
-    ui(new Ui::Chatting)
+    ui(new Ui::Chatting),socket(s),psInfo(psInfo),fdInfo(fdInfo)
 {
     ui->setupUi(this);
-    this->socket = s;
-    this->psInfo = psInfo;
-    this->fdInfo = fdInfo;
     connect(socket,&TcpSocketClient::connected,this,&Chatting::Connected);
     connect(socket,&TcpSocketClient::disConnect,this,&Chatting::onDisConnect);
     connect(socket,&TcpSocketClient::hasMsg,this,&Chatting::hasMsgDeal);
+    qDebug()<<"cur_user:"<<this->psInfo->getCharUserId()<<" friend_user:"<<fdInfo->getCharUserId()<<endl;
     getMsg();
 }
 
@@ -40,11 +38,11 @@ void Chatting::addUsrItem(QString name)
 void Chatting::getMsg()
 {
     MyProtoMsg msg;
-    char* userId = psInfo->getCharUserId();
-    char* friendId = fdInfo->getCharUserId();
+    QString userId = this->psInfo->getUserId();
+    QString friendId = this->fdInfo->getUserId();
     msg.head.server = CMD_GET_FRIEND_MSG;
-    msg.body["userId"] = Json::Value(userId);
-    msg.body["friendId"] = Json::Value(friendId);
+    msg.body["userId"] = Json::Value(userId.toStdString().c_str());
+    msg.body["friendUserId"] = Json::Value(friendId.toStdString().c_str());
     socket->onSendData(msg);
 }
 
@@ -82,14 +80,22 @@ void Chatting::hasMsgDeal(MyProtoMsg *header)
         }
     }break;
     case CMD_RECV_FRIEND_MSG:{
+        //1.解析数据
         Json::Value msg = header->body;
         QString userId = msg["userId"].asCString();
         QString content = msg["content"].asCString();
+
+        //2.获取当前时间
+        QDateTime current_date_time =QDateTime::currentDateTime();
+        QString current_date =current_date_time.toString("yyyy-MM-dd hh:mm:ss");
+
+        //3.添加条目
         if(fdInfo->getUserId()==QString(userId)){
-            QDateTime current_date_time =QDateTime::currentDateTime();
-            QString current_date =current_date_time.toString("yyyy.MM.dd hh:mm:ss");
             addNewItem(fdInfo->getUserName(),content,current_date);
+        }else{
+            addNewItem(psInfo->getUserName(),content,current_date);
         }
+        ui->msgTextEdit->clear();
     }break;
     }
 }
@@ -102,15 +108,15 @@ void Chatting::onDisConnect()
 void Chatting::on_btnSend_clicked()
 {
     QString content = ui->msgTextEdit->toPlainText();
-    char* userId = psInfo->getCharUserId();
-    char* friendId = fdInfo->getCharUserId();
+    QString userId = this->psInfo->getUserId();
+    QString friendId = this->fdInfo->getUserId();
     if(content.isEmpty()){
         return;
     }
     MyProtoMsg msg;
     msg.head.server = CMD_SEND_FRIEND_MSG;
     msg.body["content"] = Json::Value(content.toStdString().c_str());
-    msg.body["userId"] = Json::Value(userId);
-    msg.body["friendId"] = Json::Value(friendId);
+    msg.body["userId"] = Json::Value(userId.toStdString().c_str());
+    msg.body["friendUserId"] = Json::Value(friendId.toStdString().c_str());
     socket->onSendData(msg);
 }

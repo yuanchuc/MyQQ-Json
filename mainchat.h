@@ -23,7 +23,7 @@ class MainChat : public QWidget
     Q_OBJECT
 
 public:
-    explicit MainChat(Info*psInfo,TcpSocketClient* s,QWidget *parent = nullptr);
+    explicit MainChat(Info* const psInfo,TcpSocketClient* s,QWidget *parent = nullptr);
     ~MainChat();
     QString GetMd5(const QString &value);
 private slots:
@@ -37,13 +37,13 @@ private slots:
 private:
     Ui::MainChat *ui;
     TcpSocketClient* socket;
-    Info* psInfo;
+    Info* const psInfo;
 private:
     void setTabWidget();//初始化TabWidget
     void initFriend();  //初始化好友
     void initEvent();   //初始化右键菜单事件
     void moveItemFriend(const char* friendId);          //删除对应的好友Item
-    void addNewItem(Info * fdInfo);   //添加对应的好友Item
+    void addNewItem(Info * const fdInfo);   //添加对应的好友Item
     void onActionDelete();  //菜单删除操作
     Info* setPersonInfo(Json::Value info);
 private:

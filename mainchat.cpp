@@ -1,8 +1,8 @@
 #include "mainchat.h"
 #include "ui_mainchat.h"
 
-MainChat::MainChat(Info*psInfo,TcpSocketClient* s,QWidget *parent) :
-    QWidget(parent),
+MainChat::MainChat(Info* const psInfo,TcpSocketClient* s,QWidget *parent) :
+    QWidget(parent),psInfo(psInfo),
     ui(new Ui::MainChat)
 {
     ui->setupUi(this);
@@ -11,7 +11,6 @@ MainChat::MainChat(Info*psInfo,TcpSocketClient* s,QWidget *parent) :
 
     //初始化成员
     VM = nullptr;
-    this->psInfo = psInfo;
     socket = s;
     ui->userIdLabel->setText(psInfo->getUserId());
     ui->userNameLabel->setText(psInfo->getUserName());
@@ -184,7 +183,7 @@ void MainChat::moveItemFriend(const char* friendId)
     }
 }
 
-void MainChat::addNewItem(Info*fdInfo)
+void MainChat::addNewItem(Info* const fdInfo)
 {
     friendItem* widget = new friendItem(socket,psInfo,fdInfo,this);
     QListWidgetItem* item = new QListWidgetItem;

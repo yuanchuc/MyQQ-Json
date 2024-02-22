@@ -16,7 +16,7 @@ class friendItem : public QWidget
 {
     Q_OBJECT
 public:
-    explicit friendItem(TcpSocketClient* s,Info* psInfo,Info*fdInfo,QWidget *parent = nullptr);
+    explicit friendItem(TcpSocketClient* s,Info* const psInfo,Info* const fdInfo,QWidget *parent = nullptr);
     ~friendItem();
     void setFriendId(QString Id);
     void setStatus(QString status);
@@ -29,8 +29,8 @@ private slots:
 private:
     TcpSocketClient* socket;
     Ui::friendItem *ui;
-    Info* psInfo;
-    Info* fdInfo;
+    Info* const psInfo;
+    Info* const fdInfo;
 private:
 
 };
